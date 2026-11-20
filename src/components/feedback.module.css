@@ -1,0 +1,98 @@
+.error {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75em 1.5em;
+  padding: 1em 1.2em;
+  border: 1px solid var(--color-line);
+  border-left: 3px solid var(--color-accent);
+  border-radius: 0.75em;
+  background: var(--color-surface);
+  color: var(--color-ink-soft);
+  font-size: 0.92em;
+}
+
+.retry,
+.loadMoreButton {
+  min-height: var(--tap-size);
+  padding: 0 1.3em;
+  border: 1px solid var(--color-line-strong);
+  border-radius: var(--radius-pill);
+  background: transparent;
+  color: var(--color-ink);
+  font-weight: 500;
+}
+
+@media (hover: hover) {
+  .retry:hover,
+  .loadMoreButton:hover:not(:disabled) {
+    border-color: var(--color-ink);
+  }
+}
+
+.loadMoreButton:disabled {
+  cursor: progress;
+  color: var(--color-muted);
+}
+
+.loadMore {
+  display: flex;
+  justify-content: center;
+  margin-top: 1.8em;
+}
+
+.empty {
+  color: var(--color-muted);
+  font-size: 0.92em;
+}
+
+@keyframes shimmer {
+  from {
+    background-position: 100% 0;
+  }
+  to {
+    background-position: -100% 0;
+  }
+}
+
+.block {
+  display: block;
+  border-radius: 0.5em;
+  background: linear-gradient(90deg, var(--color-line) 25%, var(--color-line-soft) 50%, var(--color-line) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.4s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .block {
+    animation: none;
+  }
+}
+
+.rowCard {
+  flex: 0 0 var(--card-width);
+  width: var(--card-width);
+}
+
+.poster {
+  aspect-ratio: 2 / 3;
+  border-radius: 0.85em;
+}
+
+.line {
+  height: 0.9em;
+  margin-top: 0.8em;
+}
+
+.lineShort {
+  width: 60%;
+  height: 0.75em;
+  margin-top: 0.45em;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(var(--grid-columns), minmax(0, 1fr));
+  gap: 1.8em 1.25em;
+}

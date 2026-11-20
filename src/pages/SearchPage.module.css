@@ -1,0 +1,35 @@
+.page {
+  max-width: var(--page-max-width);
+  margin: 0 auto;
+  padding: 0.75em var(--page-pad) var(--bottom-pad);
+}
+
+.back {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4em;
+  min-height: var(--tap-size);
+  padding: 0.5em 0;
+  border: 0;
+  background: transparent;
+  color: var(--color-ink-soft);
+  font-weight: 500;
+}
+
+.header {
+  margin: 1em 0 1.6em;
+}
+
+.title {
+  margin-top: 0.15em;
+  font-family: var(--font-serif);
+  font-weight: 600;
+  font-size: 1.9em;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}
+
+.notFoundText {
+  margin-bottom: 1.5em;
+  color: var(--color-ink-soft);
+}

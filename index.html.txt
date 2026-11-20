@@ -1,0 +1,358 @@
+!doctype html
+html lang=en
+head
+meta charset=utf-8
+meta name=viewport content=width=device-width, initial-scale=1
+titleNixhin — watch anime freetitle
+link rel=preconnect href=httpsfonts.googleapis.com
+link rel=preconnect href=httpsfonts.gstatic.com crossorigin
+link rel=stylesheet href=httpsfonts.googleapis.comcss2family=Shippori+Minchowght@500;600;700&family=Zen+Kaku+Gothic+Newwght@400;500;700&display=swap
+style
+  html, body { margin 0; background #F6F4EF; }
+  html { scroll-behavior smooth; }
+  button, a { -webkit-tap-highlight-color transparent; }
+  buttonfocus-visible, afocus-visible, inputfocus-visible { outline 2px solid var(--accent); outline-offset 3px; }
+  .row { scrollbar-width thin; }
+  .sr { position absolute; width 1px; height 1px; overflow hidden; clip rect(0 0 0 0); white-space nowrap; }
+style
+head
+body
+div id=appdiv
+script
+(function () {
+  var ACCENT = '#B83D62';
+  document.documentElement.style.setProperty('--accent', ACCENT);
+
+  var SHOWS = [
+    { id 'lantern', title 'Paper Lantern Brigade', jp '紙灯籠旅団', glyph '灯', genre 'Fantasy', tags 'Fantasy · Adventure', eps 12, motif 'sun', c1 '#2E2A4F', c2 '#F2B880', c3 '#E98A8A', day 'Sat', time '930 PM', syn 'Six apprentice lamplighters guard a floating city whose lanterns hold the memories of everyone who ever lived there.' },
+    { id 'ronin', title 'Neon Ronin 2099', jp 'ネオン浪人', glyph '刃', genre 'Sci-Fi', tags 'Sci-Fi · Action', eps 12, motif 'grid', c1 '#1F2A44', c2 '#8FB3D9', c3 '#E7A0B4', day 'Fri', time '1100 PM', syn 'A courier with a borrowed cyber-arm takes one last delivery across a city that never turns its lights off.' },
+    { id 'teahouse', title 'The Last Tea House on Mars', jp '火星最後の茶屋', glyph '茶', genre 'Slice of Life', tags 'Slice of Life · Sci-Fi', eps 10, motif 'moon', c1 '#6E3B2E', c2 '#F3D9B8', c3 '#C9694B', day 'Sun', time '600 PM', syn 'The only tea house on the red planet stays open for miners, drifters and one very lost android.' },
+    { id 'kitsune', title 'Kitsune Delivery Co.', jp 'きつね運送', glyph '狐', genre 'Comedy', tags 'Comedy · Supernatural', eps 12, motif 'rings', c1 '#3F5B4A', c2 '#E58E4E', c3 '#F2E8D8', day 'Wed', time '730 PM', syn 'A fox spirit starts a parcel service in a sleepy mountain town and immediately loses every package.' },
+    { id 'rail', title 'Skyward Rail', jp '空の鉄道', glyph '空', genre 'Adventure', tags 'Adventure · Family', eps 24, motif 'peaks', c1 '#3D5A80', c2 '#A9C5E8', c3 '#F4EFE6', day 'Mon', time '800 PM', syn 'Two siblings stow away on a sky train that stops at a different floating island every night.' },
+    { id 'ghost', title 'Ghost Club After School', jp '放課後ゴースト部', glyph '霊', genre 'Mystery', tags 'Mystery · Comedy', eps 12, motif 'moon', c1 '#2B2540', c2 '#CBBDF0', c3 '#9ED9C4', day 'Thu', time '1000 PM', syn 'The school’s least popular club solves hauntings, mostly by asking the ghosts nicely.' },
+    { id 'blossom', title 'Iron Blossom', jp '鉄の花', glyph '花', genre 'Action', tags 'Action · Mecha', eps 13, motif 'slash', c1 '#4A2233', c2 '#E7A0B4', c3 '#F6DDE3', day 'Tue', time '900 PM', syn 'A gardener pilots a giant mech of iron and cherry wood to defend the last green valley.' },
+    { id 'bento', title 'Midnight Bento', jp '真夜中弁当', glyph '夜', genre 'Romance', tags 'Romance · Slice of Life', eps 12, motif 'sun', c1 '#2F3557', c2 '#F3B6C6', c3 '#F6E3A8', day 'Fri', time '830 PM', syn 'A night-shift cook and a sleepless musician trade lunchboxes and notes, but never meet.' },
+    { id 'tide', title 'Tidecaller', jp '潮呼び', glyph '潮', genre 'Action', tags 'Action · Fantasy', eps 24, motif 'rings', c1 '#1E4A52', c2 '#8ED8CC', c3 '#E9F6F2', day 'Sun', time '1030 PM', syn 'A girl who can hear the ocean think is drafted into a war between two drowned kingdoms.' },
+    { id 'stardebt', title 'Star Debt', jp '星の借金', glyph '星', genre 'Sci-Fi', tags 'Sci-Fi · Comedy', eps 12, motif 'slash', c1 '#232B3A', c2 '#F0CF7A', c3 '#8FA3E6', day 'Wed', time '1130 PM', syn 'A spaceship crew owes money to everyone in the galaxy, and every job makes it worse.' },
+    { id 'arcade', title 'Moonlit Arcade', jp '月夜のゲーセン', glyph '遊', genre 'Romance', tags 'Romance · Comedy', eps 12, motif 'grid', c1 '#3A2550', c2 '#E3A3D6', c3 '#9EE3EC', day 'Thu', time '700 PM', syn 'Rival high-score holders keep leaving messages for each other on the same old cabinet.' },
+    { id 'crown', title 'Hollow Crown Academy', jp '空冠学園', glyph '冠', genre 'Fantasy', tags 'Fantasy · Drama', eps 12, motif 'peaks', c1 '#4A4060', c2 '#E3C987', c3 '#C3B1EA', day 'Mon', time '930 PM', syn 'At an academy for heirs without kingdoms, one student is secretly the reason they all fell.' }
+  ];
+  var BY = {}; SHOWS.forEach(function (s) { BY[s.id] = s; });
+  var DAY_LONG = { Mon 'Mondays', Tue 'Tuesdays', Wed 'Wednesdays', Thu 'Thursdays', Fri 'Fridays', Sat 'Saturdays', Sun 'Sundays' };
+  var GENRES = ['All', 'Action', 'Adventure', 'Comedy', 'Fantasy', 'Mystery', 'Romance', 'Sci-Fi', 'Slice of Life'];
+  var FEATURED = ['lantern', 'ronin', 'teahouse', 'blossom'];
+
+  var CFG = {
+    phone { fs '15px', pad '1.25em', maxW 'none', cardW '9.25em', contW '15em', cols 2, heroTop '1.25em', heroDir 'column', heroGap '1.5em', heroAlign 'stretch', heroTextBasis 'auto', heroArtBasis 'auto', heroArtW '100%', heroRatio '4  3', heroTitle '2.1em', heroTextOrder 1, heroArtOrder 0, sectionGap '3em', schedCols 'repeat(7, 10em)', watchDir 'column', watchAlign 'stretch', playerFlex '0 0 auto', sideFlex '0 0 auto', sideW '100%', epMaxH '22em', bottomPad '2em', chipWrap 'nowrap', searchW '100%' },
+    tablet { fs '16px', pad '2em', maxW 'none', cardW '10.5em', contW '17em', cols 3, heroTop '2em', heroDir 'row', heroGap '2em', heroAlign 'center', heroTextBasis '44%', heroArtBasis '56%', heroArtW 'auto', heroRatio '4  5', heroTitle '2.4em', heroTextOrder 0, heroArtOrder 1, sectionGap '3.5em', schedCols 'repeat(7, 10.5em)', watchDir 'column', watchAlign 'stretch', playerFlex '0 0 auto', sideFlex '0 0 auto', sideW '100%', epMaxH '20em', bottomPad '2.5em', chipWrap 'wrap', searchW '15em' },
+    laptop { fs '16px', pad '3.5em', maxW '1520px', cardW '11.5em', contW '19em', cols 5, heroTop '3em', heroDir 'row', heroGap '4em', heroAlign 'center', heroTextBasis '40%', heroArtBasis '60%', heroArtW 'auto', heroRatio '16  10', heroTitle '3.4em', heroTextOrder 0, heroArtOrder 1, sectionGap '4.5em', schedCols 'repeat(7, minmax(0, 1fr))', watchDir 'row', watchAlign 'flex-start', playerFlex '1 1 0', sideFlex '0 0 22em', sideW '22em', epMaxH '34em', bottomPad '3em', chipWrap 'wrap', searchW '16em' },
+    tv { fs '22px', pad '4em', maxW 'none', cardW '10.5em', contW '17em', cols 6, heroTop '2.5em', heroDir 'row', heroGap '3.5em', heroAlign 'center', heroTextBasis '40%', heroArtBasis '60%', heroArtW 'auto', heroRatio '16  9', heroTitle '3.2em', heroTextOrder 0, heroArtOrder 1, sectionGap '3.5em', schedCols 'repeat(7, minmax(0, 1fr))', watchDir 'row', watchAlign 'flex-start', playerFlex '1 1 0', sideFlex '0 0 20em', sideW '20em', epMaxH '28em', bottomPad '3em', chipWrap 'wrap', searchW '15em' }
+  };
+
+  var state = { genre 'All', hero 0, view 'home', showId 'lantern', ep 1, menu false, playing false, queue loadQueue() };
+
+  function loadQueue() {
+    try { var q = JSON.parse(localStorage.getItem('nixhin-queue')  'null'); if (Array.isArray(q)) return q; } catch (e) {}
+    return ['tide'];
+  }
+  function saveQueue() { try { localStorage.setItem('nixhin-queue', JSON.stringify(state.queue)); } catch (e) {} }
+  function layout() {
+    var w = window.innerWidth;
+    return w  640  'phone'  w  1100  'tablet'  w  1760  'laptop'  'tv';
+  }
+
+   ---------- poster art ---------- 
+  function art(s) {
+    var c1 = s.c1, c2 = s.c2, c3 = s.c3, body = '';
+    var open = 'svg aria-hidden=true viewBox=0 0 200 300 preserveAspectRatio=xMidYMid slice style=positionabsolute;inset0;width100%;height100%;displayblock';
+    body += 'rect width=200 height=300 fill=' + c1 + '';
+    if (s.motif === 'sun') {
+      body += 'circle cx=100 cy=135 r=64 fill=' + c2 + ' opacity=0.95rect y=152 width=200 height=4 fill=' + c1 + 'rect y=166 width=200 height=6 fill=' + c1 + 'rect y=182 width=200 height=8 fill=' + c1 + 'path d=M0 300V218q50-22 100 0t100 0V300z fill=' + c3 + ' opacity=0.55path d=M0 300V248q50-18 100 0t100 0V300z fill=' + c1 + ' opacity=0.6';
+    } else if (s.motif === 'grid') {
+      body += 'circle cx=100 cy=128 r=46 fill=' + c3 + ' opacity=0.9rect y=152 width=200 height=148 fill=' + c1 + 'g stroke=' + c2 + ' stroke-width=1 fill=none opacity=0.6path d=M0 152H200M0 170H200M0 194H200M0 228H200M0 276H200path d=M100 152L100 300M100 152L40 300M100 152L-20 300M100 152L-80 300M100 152L160 300M100 152L220 300M100 152L280 300g';
+    } else if (s.motif === 'moon') {
+      body += 'circle cx=118 cy=105 r=52 fill=' + c2 + 'circle cx=140 cy=90 r=46 fill=' + c1 + 'circle cx=40 cy=62 r=1.8 fill=' + c3 + 'circle cx=168 cy=172 r=1.4 fill=' + c3 + 'circle cx=62 cy=148 r=1.3 fill=' + c3 + 'circle cx=152 cy=40 r=1.2 fill=' + c3 + 'ellipse cx=50 cy=305 rx=120 ry=66 fill=' + c3 + ' opacity=0.45ellipse cx=175 cy=315 rx=110 ry=56 fill=' + c2 + ' opacity=0.35';
+    } else if (s.motif === 'rings') {
+      body += 'g fill=none stroke=' + c2 + ' stroke-width=2 opacity=0.7circle cx=100 cy=140 r=30circle cx=100 cy=140 r=54circle cx=100 cy=140 r=78circle cx=100 cy=140 r=102circle cx=100 cy=140 r=126gcircle cx=100 cy=140 r=14 fill=' + c3 + '';
+    } else if (s.motif === 'peaks') {
+      body += 'circle cx=146 cy=74 r=20 fill=' + c3 + ' opacity=0.9path d=M0 300V196L60 128L110 204L150 158L200 216V300z fill=' + c2 + ' opacity=0.8path d=M0 300V244L50 206L100 254L160 214L200 242V300z fill=' + c1 + ' opacity=0.55';
+    } else {
+      body += 'path d=M0 226L200 70V112L0 268z fill=' + c2 + ' opacity=0.85path d=M0 180L200 24V36L0 192z fill=' + c3 + ' opacity=0.7circle cx=58 cy=82 r=16 fill=' + c3 + ' opacity=0.9';
+    }
+    var glyph = 'text x=16 y=282 font-family='Shippori Mincho', serif font-weight=600 font-size=30 fill=#FFFFFF opacity=0.88' + s.glyph + 'text';
+    return open + body + 'svg' + open + glyph + 'svg';
+  }
+
+   ---------- small pieces ---------- 
+  var SERIF = font-family'Shippori Mincho',serif;;
+  var BTN_RESET = 'backgroundtransparent;border0;padding0;margin0;colorinherit;fontinherit;text-alignleft;cursorpointer;';
+  function label(t) { return 'span style=displayblock;font-size0.72em;letter-spacing0.22em;text-transformuppercase;color#6B6A73' + t + 'span'; }
+  function h2(t) { return 'h2 style=margin0.15em 0 0;' + SERIF + 'font-weight600;font-size1.55em;line-height1.2' + t + 'h2'; }
+  function head(lbl, title, right) {
+    return 'div style=displayflex;align-itemsflex-end;justify-contentspace-between;gap1em;margin-bottom1.1em;flex-wrapwrapdiv' + label(lbl) + h2(title) + 'div' + (right  '') + 'div';
+  }
+  function link(href, t) { return 'a href=' + href + ' style=color#1C1B22;font-size0.9em;font-weight500;text-decorationunderline;text-underline-offset0.3em;text-decoration-color#CFCAC0;padding0.6em 0;white-spacenowrap' + t + 'a'; }
+  function muted(t) { return 'span style=color#6B6A73;font-size0.85em' + t + 'span'; }
+  function poster(s, ring) {
+    return 'span style=displayblock;positionrelative;aspect-ratio2  3;border-radius0.85em;overflowhidden;background' + s.c1 + ';' + (ring  '') + '' + art(s) + 'span';
+  }
+  function rowCard(s, C, under, ring) {
+    return 'button data-act=open data-id=' + s.id + ' aria-label=Watch ' + s.title + ' style=flex0 0 ' + C.cardW + ';width' + C.cardW + ';' + BTN_RESET + 'scroll-snap-alignstart' + poster(s, ring) + under + 'button';
+  }
+  function titleLines(s, sub) {
+    return 'span style=displayblock;font-weight500;line-height1.35' + s.title + 'spanspan style=displayblock;color#6B6A73;font-size0.82em' + sub + 'span';
+  }
+  function row(inner, extra) { return 'div class=row style=displayflex;gap1.25em;overflow-xauto;padding-bottom0.5em;scroll-snap-typex mandatory;' + (extra  '') + '' + inner + 'div'; }
+  var ICON = {
+    search 'svg aria-hidden=true viewBox=0 0 24 24 fill=none stroke=currentColor stroke-width=1.8 stroke-linecap=round style=width1.1em;height1.1em;flex0 0 autocircle cx=11 cy=11 r=7path d=M20 20l-3.5-3.5svg',
+    menu 'svg aria-hidden=true viewBox=0 0 24 24 fill=none stroke=currentColor stroke-width=1.8 stroke-linecap=round style=width1.15em;height1.15empath d=M5 9h14M5 15h14svg',
+    play 'svg aria-hidden=true viewBox=0 0 24 24 fill=currentColor style=width0.95em;height0.95empath d=M7 4.5v15l13-7.5zsvg',
+    bigPlay 'svg aria-hidden=true viewBox=0 0 24 24 fill=currentColor style=width1.5em;height1.5empath d=M8 5v14l11-7zsvg',
+    pause 'svg aria-hidden=true viewBox=0 0 24 24 fill=currentColor style=width1.5em;height1.5emrect x=6.5 y=5 width=3.5 height=14 rx=1rect x=14 y=5 width=3.5 height=14 rx=1svg',
+    back 'svg aria-hidden=true viewBox=0 0 24 24 fill=none stroke=currentColor stroke-width=1.8 stroke-linecap=round stroke-linejoin=round style=width1.1em;height1.1empath d=M15 5l-7 7 7 7svg',
+    next 'svg aria-hidden=true viewBox=0 0 24 24 fill=currentColor style=width0.9em;height0.9empath d=M5 5v14l10-7zM17 5h2.5v14H17zsvg',
+    cc 'svg aria-hidden=true viewBox=0 0 24 24 fill=none stroke=currentColor stroke-width=1.8 stroke-linecap=round style=width1.2em;height1.2emrect x=3 y=5 width=18 height=14 rx=2path d=M10 10.5a2 2 0 1 0 0 3M17 10.5a2 2 0 1 0 0 3svg',
+    full 'svg aria-hidden=true viewBox=0 0 24 24 fill=none stroke=currentColor stroke-width=1.8 stroke-linecap=round stroke-linejoin=round style=width1.15em;height1.15empath d=M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5svg',
+    home 'svg aria-hidden=true viewBox=0 0 24 24 fill=none stroke=currentColor stroke-width=1.8 stroke-linecap=round stroke-linejoin=round style=width1.9em;height1.9empath d=M4 11l8-7 8 7v9h-5v-6H9v6H4zsvg',
+    grid 'svg aria-hidden=true viewBox=0 0 24 24 fill=none stroke=currentColor stroke-width=1.8 stroke-linejoin=round style=width1.9em;height1.9emrect x=4 y=4 width=7 height=7 rx=1.5rect x=13 y=4 width=7 height=7 rx=1.5rect x=4 y=13 width=7 height=7 rx=1.5rect x=13 y=13 width=7 height=7 rx=1.5svg',
+    cal 'svg aria-hidden=true viewBox=0 0 24 24 fill=none stroke=currentColor stroke-width=1.8 stroke-linecap=round stroke-linejoin=round style=width1.9em;height1.9emrect x=4 y=5 width=16 height=15 rx=2path d=M4 10h16M9 3v4M15 3v4svg',
+    mark 'svg aria-hidden=true viewBox=0 0 24 24 fill=none stroke=currentColor stroke-width=1.8 stroke-linecap=round stroke-linejoin=round style=width1.9em;height1.9empath d=M6 4h12v16l-6-4-6 4zsvg'
+  };
+  function dot(size) { return 'span style=width' + size + ';height' + size + ';border-radius50%;background' + ACCENT + ';displayinline-blockspan'; }
+
+   ---------- sections ---------- 
+  function header(L, C) {
+    var wide = L === 'laptop'  L === 'tv';
+    var navLink = function (h, t) { return 'a href=' + h + ' style=color#1C1B22;text-decorationnone;font-weight500;font-size0.95em' + t + 'a'; };
+    var round = 'width2.75em;height2.75em;displayflex;align-itemscenter;justify-contentcenter;backgroundtransparent;border1px solid #E4E1DA;border-radius50%;color#1C1B22;cursorpointer';
+    var out = 'header style=positionsticky;top0;z-index20;background#F6F4EF;border-bottom1px solid #E4E1DA';
+    out += 'div style=max-width' + C.maxW + ';margin0 auto;padding0.75em ' + C.pad + ';displayflex;align-itemscenter;gap2em;box-sizingborder-box';
+    out += 'a href=#top data-act=home aria-label=Nixhin home style=displayflex;align-itemscenter;gap0.6em;color#1C1B22;text-decorationnone;flex0 0 auto;min-height2.75emspan style=' + SERIF + 'font-weight700;font-size1.4em;letter-spacing0.08emnixhinspan' + dot('0.4em') + 'span style=font-size0.7em;color#6B6A73;letter-spacing0.3emニクシンspana';
+    if (wide) out += 'nav aria-label=Main style=displayflex;gap1.8em;align-itemscenter' + navLink('#trending', 'Trending') + navLink('#season', 'New season') + navLink('#browse', 'Browse') + navLink('#schedule', 'Schedule') + 'nav';
+    out += 'div style=flex1 1 autodiv';
+    if (L !== 'phone') out += 'label style=displayflex;align-itemscenter;gap0.55em;background#FFFFFF;border1px solid #E4E1DA;border-radius999px;padding0 1.1em;min-height2.75em;width' + C.searchW + ';box-sizingborder-box;color#6B6A73;positionrelative' + ICON.search + 'span class=srSearch animespaninput type=search placeholder=Search anime style=backgroundtransparent;border0;outlinenone;color#1C1B22;fontinherit;font-size0.92em;width100%;min-width0label';
+    if (L === 'phone') out += 'button aria-label=Search style=' + round + '' + ICON.search + 'button';
+    if (!wide) out += 'button data-act=menu aria-label=Menu aria-expanded=' + (state.menu  'true'  'false') + ' style=' + round + '' + ICON.menu + 'button';
+    out += 'div';
+    if (state.menu && !wide) {
+      var m = function (h, t, last) { return 'a href=' + h + ' data-act=closeMenu style=color#1C1B22;text-decorationnone;font-weight500;padding0.8em 0;' + (last  ''  'border-bottom1px solid #EDEAE3') + '' + t + 'a'; };
+      out += 'nav aria-label=Menu style=displayflex;flex-directioncolumn;padding0.25em ' + C.pad + ' 1em;border-top1px solid #E4E1DA' + m('#trending', 'Trending') + m('#season', 'New this season') + m('#browse', 'Browse') + m('#schedule', 'Schedule', true) + 'nav';
+    }
+    return out + 'header';
+  }
+
+  function home(L, C) {
+    var isTv = L === 'tv';
+    var h = BY[FEATURED[state.hero % FEATURED.length]];
+    var inQ = state.queue.indexOf(h.id) = 0;
+    var out = 'main id=top style=max-width' + C.maxW + ';margin0 auto;padding0 ' + C.pad + ' ' + C.bottomPad + ';box-sizingborder-box';
+
+     hero
+    out += 'section aria-label=Featured style=margin-top' + C.heroTop + ';displayflex;flex-direction' + C.heroDir + ';gap' + C.heroGap + ';align-items' + C.heroAlign + '';
+    out += 'div style=flex1 1 ' + C.heroTextBasis + ';min-width0;order' + C.heroTextOrder + ';displayflex;flex-directioncolumn;gap1em';
+    out += label('Featured · 今週の注目');
+    out += 'h1 style=margin0;' + SERIF + 'font-weight600;font-size' + C.heroTitle + ';line-height1.1;letter-spacing-0.005em' + h.title + 'h1';
+    out += 'span style=color#6B6A73;font-size0.92em' + h.jp + ' · ' + h.tags + ' · ' + h.eps + ' episodesspan';
+    out += 'p style=margin0;color#3D3C45;max-width30em' + h.syn + 'p';
+    out += 'div style=displayflex;flex-wrapwrap;gap0.75em;margin-top0.5em';
+    out += 'button data-act=open data-id=' + h.id + ' style=displayinline-flex;align-itemscenter;gap0.55em;background#1C1B22;color#FFFFFF;border0;border-radius999px;padding0 1.5em;min-height3em;fontinherit;font-weight500;cursorpointer' + ICON.play + 'Watch episode 1button';
+    out += 'button data-act=queue data-id=' + h.id + ' style=displayinline-flex;align-itemscenter;backgroundtransparent;color#1C1B22;border1px solid #CFCAC0;border-radius999px;padding0 1.4em;min-height3em;fontinherit;font-weight500;cursorpointer' + (inQ  'In your queue'  'Add to queue') + 'button';
+    out += 'div';
+    out += 'span style=displayinline-flex;align-itemscenter;gap0.5em;color#6B6A73;font-size0.85em;margin-top0.2em' + dot('0.4em') + 'Free to watch · No account neededspan';
+    out += 'div role=group aria-label=Featured shows style=displayflex;gap0.15em;margin-top0.2em';
+    FEATURED.forEach(function (id, i) {
+      var on = i === state.hero % FEATURED.length;
+      out += 'button data-act=hero data-i=' + i + ' aria-label=Show ' + BY[id].title + ' aria-pressed=' + on + ' style=backgroundtransparent;border0;padding1.1em 0.25em;cursorpointer;displayflex;align-itemscenterspan style=displayblock;width' + (on  '2em'  '0.75em') + ';height3px;border-radius999px;background' + (on  '#1C1B22'  '#CFCAC0') + ';transitionwidth .25sspanbutton';
+    });
+    out += 'div';
+    if (isTv) out += 'span style=color#6B6A73;font-size0.8emUse the arrows on your remote to move, OK to play.span';
+    out += 'div';
+    out += 'div style=flex1 1 ' + C.heroArtBasis + ';width' + C.heroArtW + ';positionrelative;aspect-ratio' + C.heroRatio + ';order' + C.heroArtOrder + ';border-radius1.25em;overflowhidden;background' + h.c1 + '' + art(h) + 'span style=positionabsolute;top1.1em;right1.1em;writing-modevertical-rl;' + SERIF + 'font-weight500;color#FFFFFF;letter-spacing0.3em;font-size0.95em;opacity0.9' + h.jp + 'spandiv';
+    out += 'section';
+
+     continue
+    var cont = [{ id 'ronin', ep 4, pct '62%', left '9 min left' }, { id 'teahouse', ep 7, pct '30%', left '17 min left' }, { id 'tide', ep 2, pct '85%', left '4 min left' }];
+    var ci = '';
+    cont.forEach(function (c) {
+      var s = BY[c.id];
+      ci += 'button data-act=open data-id=' + s.id + ' data-ep=' + c.ep + ' aria-label=Resume ' + s.title + ', episode ' + c.ep + ' style=flex0 0 ' + C.contW + ';width' + C.contW + ';' + BTN_RESET + 'scroll-snap-alignstart';
+      ci += 'span style=displayblock;positionrelative;aspect-ratio16  9;border-radius0.85em;overflowhidden;background' + s.c1 + '' + art(s) + 'span';
+      ci += 'span style=displayblock;height3px;background#E4E1DA;border-radius999px;margin-top0.6em;overflowhiddenspan style=displayblock;height100%;width' + c.pct + ';background' + ACCENT + 'spanspan';
+      ci += 'span style=displayblock;margin-top0.55em;font-weight500;line-height1.35' + s.title + 'spanspan style=displayblock;color#6B6A73;font-size0.85emEpisode ' + c.ep + ' · ' + c.left + 'spanbutton';
+    });
+    out += 'section id=continue style=margin-top' + C.sectionGap + '' + head('Continue · つづき', 'Pick up where you left off', muted('Saved on this device')) + row(ci) + 'section';
+
+     trending
+    var ti = '';
+    ['blossom', 'ronin', 'lantern', 'ghost', 'tide', 'kitsune', 'stardebt', 'crown'].forEach(function (id, i) {
+      var s = BY[id];
+      var ring = isTv && i === 0  'outline3px solid ' + ACCENT + ';outline-offset4px;'  '';
+      var under = 'span style=displayflex;gap0.6em;margin-top0.7em;align-itemsbaselinespan style=' + SERIF + 'font-weight600;color' + ACCENT + ';font-size0.95em0' + (i + 1) + 'spanspan style=min-width0' + titleLines(s, s.tags) + 'spanspan';
+      ti += rowCard(s, C, under, ring);
+    });
+    out += 'section id=trending style=margin-top' + C.sectionGap + '' + head('Trending · 人気', 'Loved this week', link('#browse', 'See all')) + row(ti, 'padding0.3em 0.3em 0.5em;margin0 -0.3em;') + 'section';
+
+     season
+    var si = '';
+    ['lantern', 'bento', 'arcade', 'rail', 'teahouse', 'ghost'].forEach(function (id) {
+      var s = BY[id];
+      var under = 'span style=displayblock;margin-top0.7em;color' + ACCENT + ';font-size0.75em;letter-spacing0.12em;text-transformuppercase;font-weight700New · ' + DAY_LONG[s.day] + 'span' + titleLines(s, s.tags);
+      si += rowCard(s, C, under);
+    });
+    out += 'section id=season style=margin-top' + C.sectionGap + '' + head('New season · 新作', 'Airing this season', link('#schedule', 'Schedule')) + row(si) + 'section';
+
+     browse
+    var g = state.genre;
+    var list = SHOWS.filter(function (s) { return g === 'All'  s.genre === g  s.tags.indexOf(g) = 0; });
+    var chips = '';
+    GENRES.forEach(function (lbl) {
+      var on = lbl === g;
+      chips += 'button data-act=genre data-g=' + lbl + ' aria-pressed=' + on + ' style=flex0 0 auto;min-height2.6em;padding0 1.1em;border-radius999px;fontinherit;font-size0.88em;font-weight500;cursorpointer;white-spacenowrap;background' + (on  '#1C1B22'  'transparent') + ';color' + (on  '#FFFFFF'  '#1C1B22') + ';border1px solid ' + (on  '#1C1B22'  '#D9D5CC') + '' + lbl + 'button';
+    });
+    var grid = '';
+    list.forEach(function (s) {
+      grid += 'button data-act=open data-id=' + s.id + ' aria-label=Watch ' + s.title + ' style=width100%;' + BTN_RESET + '' + poster(s) + 'span style=displayblock;margin-top0.7emspan' + titleLines(s, s.tags + ' · ' + s.eps + ' eps') + 'button';
+    });
+    out += 'section id=browse style=margin-top' + C.sectionGap + '' + head('Library · さがす', 'Browse everything', muted(list.length + ' series · all free'));
+    out += 'div role=group aria-label=Filter by genre class=row style=displayflex;flex-wrap' + C.chipWrap + ';gap0.5em;overflow-xauto;padding-bottom0.4em;margin-bottom1.4em' + chips + 'div';
+    out += 'div style=displaygrid;grid-template-columnsrepeat(' + C.cols + ', minmax(0, 1fr));gap1.8em 1.25em' + grid + 'divsection';
+
+     schedule
+    var keys = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    var kanji = ['月', '火', '水', '木', '金', '土', '日'];
+    var today = (new Date().getDay() + 6) % 7;
+    var days = '';
+    keys.forEach(function (k, i) {
+      var isT = i === today;
+      days += 'div style=background#FFFFFF;border1px solid ' + (isT  ACCENT  '#E4E1DA') + ';border-radius0.9em;padding0.9em;min-height9em;box-sizingborder-box';
+      days += 'div style=displayflex;justify-contentspace-between;align-itemsbaseline;gap0.5em;padding-bottom0.6em;border-bottom1px solid #EDEAE3span style=font-weight500' + k + ' span style=color#6B6A73;' + SERIF + '' + kanji[i] + 'spanspan' + (isT  'span style=color' + ACCENT + ';font-size0.72em;letter-spacing0.12em;text-transformuppercase;font-weight700Todayspan'  '') + 'div';
+      SHOWS.filter(function (s) { return s.day === k; }).forEach(function (s) {
+        days += 'button data-act=open data-id=' + s.id + ' style=displayblock;width100%;' + BTN_RESET + 'padding0.5em 0;min-height2.75emspan style=displayblock;font-size0.75em;color#6B6A73' + s.time + 'spanspan style=displayblock;font-weight500;font-size0.9em;line-height1.3' + s.title + 'spanbutton';
+      });
+      days += 'div';
+    });
+    out += 'section id=schedule style=margin-top' + C.sectionGap + '' + head('Schedule · 放送予定', 'This week’s episodes', muted('New episodes every week, free'));
+    out += 'div class=row style=overflow-xauto;padding-bottom0.5emdiv style=displaygrid;grid-template-columns' + C.schedCols + ';gap0.75em' + days + 'divdivsection';
+
+    return out + 'main';
+  }
+
+  function watch(L, C) {
+    var ws = BY[state.showId]  SHOWS[0];
+    var ep = state.ep;
+    var inQ = state.queue.indexOf(ws.id) = 0;
+    var out = 'main style=max-width' + C.maxW + ';margin0 auto;padding0.75em ' + C.pad + ' ' + C.bottomPad + ';box-sizingborder-box';
+    out += 'button data-act=home style=displayinline-flex;align-itemscenter;gap0.4em;backgroundtransparent;border0;color#3D3C45;fontinherit;font-weight500;padding0.5em 0;min-height2.75em;cursorpointer' + ICON.back + 'Backbutton';
+    out += 'div style=displayflex;flex-direction' + C.watchDir + ';align-items' + C.watchAlign + ';gap2em;margin-top0.75em';
+
+    out += 'section aria-label=Player style=flex' + C.playerFlex + ';min-width0';
+    out += 'div style=positionrelative;aspect-ratio16  9;background#111015;border-radius1em;overflowhidden';
+    out += 'div style=positionabsolute;inset0;opacity0.45' + art(ws) + 'div';
+    out += 'button data-act=play aria-label=' + (state.playing  'Pause'  'Play') + ' style=positionabsolute;left50%;top46%;transformtranslate(-50%,-50%);width4.2em;height4.2em;border-radius50%;border0;background#FFFFFF;color#1C1B22;displayflex;align-itemscenter;justify-contentcenter;cursorpointer' + (state.playing  ICON.pause  ICON.bigPlay) + 'button';
+    var ctl = 'width2.75em;height2.75em;displayflex;align-itemscenter;justify-contentcenter;backgroundtransparent;border0;color#FFFFFF;cursorpointer';
+    out += 'div style=positionabsolute;left0;right0;bottom0;padding0.35em 0.9em;displayflex;align-itemscenter;gap0.6em;color#FFFFFF';
+    out += 'span style=font-size0.8em;font-variant-numerictabular-nums;white-spacenowrap0812  2340span';
+    out += 'div style=flex1 1 auto;height3px;background#4A4950;border-radius999px;positionrelative;min-width3emdiv style=positionabsolute;left0;top0;bottom0;width35%;background#FFFFFF;border-radius999pxdivdiv';
+    out += 'button aria-label=Subtitles style=' + ctl + '' + ICON.cc + 'button';
+    out += 'button aria-label=Quality 1080p style=min-height2.75em;padding0 0.4em;backgroundtransparent;border0;color#FFFFFF;fontinherit;font-weight500;font-size0.8em;cursorpointer1080pbutton';
+    out += 'button aria-label=Full screen style=' + ctl + '' + ICON.full + 'button';
+    out += 'divdiv';
+    out += 'div style=margin-top1.4em;displayflex;flex-wrapwrap;justify-contentspace-between;gap1.2em;align-itemsflex-startdiv style=min-width0;flex1 1 18em';
+    out += label(ws.jp + ' · ' + ws.tags);
+    out += 'h1 style=margin0.2em 0 0;' + SERIF + 'font-weight600;font-size2em;line-height1.15' + ws.title + 'h1';
+    out += 'div style=color#3D3C45;margin-top0.3emSeason 1 · Episode ' + ep + 'div';
+    out += 'p style=margin0.6em 0 0;color#3D3C45;max-width40em' + ws.syn + 'pdiv';
+    out += 'div style=displayflex;gap0.6em;flex-wrapwrap';
+    out += 'button data-act=next style=displayinline-flex;align-itemscenter;gap0.5em;background#1C1B22;color#FFFFFF;border0;border-radius999px;padding0 1.4em;min-height2.9em;fontinherit;font-weight500;cursorpointerNext episode' + ICON.next + 'button';
+    out += 'button data-act=queue data-id=' + ws.id + ' style=displayinline-flex;align-itemscenter;backgroundtransparent;color#1C1B22;border1px solid #CFCAC0;border-radius999px;padding0 1.3em;min-height2.9em;fontinherit;font-weight500;cursorpointer' + (inQ  'In your queue'  'Add to queue') + 'button';
+    out += 'divdiv';
+    out += 'p style=margin1em 0 0;color#6B6A73;font-size0.85emStreaming free with short ad breaks. No account needed — progress saves on this device.p';
+    out += 'section';
+
+    out += 'aside aria-label=Episodes style=flex' + C.sideFlex + ';width' + C.sideW + ';box-sizingborder-box;background#FFFFFF;border1px solid #E4E1DA;border-radius1em;padding1.1em';
+    out += 'div style=displayflex;justify-contentspace-between;align-itemsbaseline;gap0.5emh2 style=margin0;' + SERIF + 'font-weight600;font-size1.2emEpisodesh2' + muted('Season 1 · ' + ws.eps) + 'div';
+    out += 'div style=displayflex;flex-directioncolumn;margin-top0.6em;max-height' + C.epMaxH + ';overflow-yauto';
+    for (var n = 1; n = ws.eps; n++) {
+      var cur = n === ep;
+      out += 'button data-act=ep data-n=' + n + ' style=displayflex;align-itemscenter;gap0.9em;width100%;text-alignleft;border0;border-bottom1px solid #F0EDE6;border-radius0.5em;padding0.55em 0.6em;min-height2.9em;cursorpointer;fontinherit;color#1C1B22;background' + (cur  '#F6F4EF'  'transparent') + '';
+      out += 'span style=flex0 0 1.8em;' + SERIF + 'font-weight600;color' + (cur  ACCENT  '#9A98A0') + '' + (n  10  '0'  '') + n + 'span';
+      out += 'span style=flex1 1 auto;min-width0span style=displayblock;font-weight500Episode ' + n + 'spanspan style=displayblock;color#6B6A73;font-size0.8em' + (cur  'Now playing'  (n  ep  'Watched'  '24 min')) + 'spanspanbutton';
+    }
+    out += 'divasidediv';
+
+    var more = SHOWS.filter(function (s) { return s.id !== ws.id; }).sort(function (a, b) { return (b.genre === ws.genre  1  0) - (a.genre === ws.genre  1  0); }).slice(0, 7);
+    var mi = '';
+    more.forEach(function (s) { mi += rowCard(s, C, 'span style=displayblock;margin-top0.7emspan' + titleLines(s, s.tags)); });
+    out += 'section style=margin-top' + C.sectionGap + '' + label('You may like · おすすめ') + 'h2 style=margin0.15em 0 1.1em;' + SERIF + 'font-weight600;font-size1.55em;line-height1.2More like thish2' + row(mi) + 'section';
+    return out + 'main';
+  }
+
+  function footer(C) {
+    var fl = function (t) { return 'a href=#top style=color#3D3C45;text-decorationnone;font-size0.9em;padding0.6em 0' + t + 'a'; };
+    return 'footer style=border-top1px solid #E4E1DA;margin-top2emdiv style=max-width' + C.maxW + ';margin0 auto;padding2.2em ' + C.pad + ';displayflex;flex-wrapwrap;gap1.5em 3em;justify-contentspace-between;box-sizingborder-box' +
+      'div style=max-width26emdiv style=displayflex;align-itemscenter;gap0.5emspan style=' + SERIF + 'font-weight700;font-size1.2em;letter-spacing0.08emnixhinspan' + dot('0.35em') + 'divp style=margin0.5em 0 0;color#6B6A73;font-size0.88emAnime, free and quiet. No account needed — your queue and progress stay on this device.pdiv' +
+      'nav aria-label=Footer style=displayflex;flex-wrapwrap;gap0.25em 1.5em;align-itemscenter' + fl('About') + fl('Help') + fl('Request a show') + fl('Terms') + fl('Privacy') + 'navdivfooter';
+  }
+
+  function tabBar() {
+    var t = function (href, icon, txt, on, act) { return 'a href=' + href + '' + (act  ' data-act=' + act + ''  '') + ' style=displayflex;flex-directioncolumn;align-itemscenter;justify-contentcenter;gap0.15em;min-height3.6em;color' + (on  '#1C1B22'  '#6B6A73') + ';text-decorationnone;font-size0.7em;font-weight' + (on  700  500) + '' + icon + txt + 'a'; };
+    return 'nav aria-label=Tabs style=positionsticky;bottom0;z-index20;background#FFFFFF;border-top1px solid #E4E1DA;displaygrid;grid-template-columnsrepeat(4, minmax(0, 1fr))' + t('#top', ICON.home, 'Home', true, 'home') + t('#browse', ICON.grid, 'Browse') + t('#schedule', ICON.cal, 'Schedule') + t('#continue', ICON.mark, 'My queue') + 'nav';
+  }
+
+   ---------- render + events ---------- 
+  var app = document.getElementById('app');
+  var lastL = null;
+  function render() {
+    var L = layout(); lastL = L;
+    var C = CFG[L];
+    var html = 'div style=width100%;min-height100vh;box-sizingborder-box;overflow-xclip;background#F6F4EF;color#1C1B22;font-family'Zen Kaku Gothic New',system-ui,sans-serif;font-size' + C.fs + ';line-height1.6;displayflex;flex-directioncolumn';
+    html += header(L, C);
+    html += 'div style=flex1 0 auto' + (state.view === 'home'  home(L, C)  watch(L, C)) + 'div';
+    html += footer(C);
+    if (L === 'phone') html += tabBar();
+    html += 'div';
+     keep horizontal scroll positions of rows between renders
+    var rows = app.querySelectorAll('.row'), pos = [];
+    for (var i = 0; i  rows.length; i++) pos.push(rows[i].scrollLeft);
+    app.innerHTML = html;
+    var nrows = app.querySelectorAll('.row');
+    for (var j = 0; j  nrows.length && j  pos.length; j++) nrows[j].scrollLeft = pos[j];
+  }
+
+  app.addEventListener('click', function (e) {
+    var el = e.target.closest('[data-act]');
+    if (!el) return;
+    var act = el.getAttribute('data-act');
+    var toTop = false;
+    if (act === 'open') {
+      state.view = 'watch'; state.showId = el.getAttribute('data-id'); state.ep = parseInt(el.getAttribute('data-ep')  '1', 10); state.playing = false; state.menu = false; toTop = true;
+    } else if (act === 'home') {
+      if (state.view !== 'home') { e.preventDefault(); toTop = true; }
+      state.view = 'home'; state.menu = false; state.playing = false;
+    } else if (act === 'menu') { state.menu = !state.menu; }
+    else if (act === 'closeMenu') { state.menu = false; }
+    else if (act === 'hero') { state.hero = parseInt(el.getAttribute('data-i'), 10); }
+    else if (act === 'genre') { state.genre = el.getAttribute('data-g'); }
+    else if (act === 'queue') {
+      var id = el.getAttribute('data-id');
+      state.queue = state.queue.indexOf(id) = 0  state.queue.filter(function (x) { return x !== id; })  state.queue.concat([id]);
+      saveQueue();
+    }
+    else if (act === 'play') { state.playing = !state.playing; }
+    else if (act === 'next') { var s = BY[state.showId]; state.ep = state.ep  s.eps  state.ep + 1  1; state.playing = false; }
+    else if (act === 'ep') { state.ep = parseInt(el.getAttribute('data-n'), 10); state.playing = false; }
+    render();
+    if (toTop) window.scrollTo({ top 0, behavior 'auto' });
+  });
+
+   auto-rotate the featured banner on the home page
+  setInterval(function () {
+    if (state.view === 'home' && !document.hidden && window.scrollY  400) { state.hero = (state.hero + 1) % FEATURED.length; render(); }
+  }, 8000);
+
+  window.addEventListener('resize', function () { if (layout() !== lastL) render(); });
+  render();
+})();
+script
+body
+html

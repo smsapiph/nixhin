@@ -1,0 +1,47 @@
+.section {
+  margin-top: var(--section-gap);
+  /* Keep anchored sections clear of the sticky header. */
+  scroll-margin-top: 5em;
+}
+
+.cardTitle {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+  overflow: hidden;
+  font-weight: 500;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.paddedRow {
+  margin: 0 -0.3em;
+  padding: 0.3em 0.3em 0.5em;
+}
+
+.ranked {
+  display: flex;
+  align-items: baseline;
+  gap: 0.6em;
+}
+
+.rank {
+  font-family: var(--font-serif);
+  font-weight: 600;
+  font-size: 0.95em;
+  color: var(--color-accent);
+}
+
+.rankedText {
+  min-width: 0;
+}
+
+.newBadge {
+  display: block;
+  color: var(--color-accent);
+  font-size: 0.75em;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}

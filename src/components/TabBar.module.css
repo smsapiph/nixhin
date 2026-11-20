@@ -1,0 +1,84 @@
+.bar {
+  position: sticky;
+  bottom: 0;
+  z-index: 20;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.25em;
+  /* Side padding keeps the outer tabs off the screen edge; the safe-area insets
+     clear the iPhone home indicator and rounded corners. */
+  padding: 0.35em max(0.5em, env(safe-area-inset-right)) max(0.35em, env(safe-area-inset-bottom))
+    max(0.5em, env(safe-area-inset-left));
+  background: var(--color-surface); /* fallback for Safari < 16.2 (no color-mix) */
+  background: color-mix(in srgb, var(--color-surface) 94%, transparent);
+  -webkit-backdrop-filter: blur(12px); /* Safari < 18 */
+  backdrop-filter: blur(12px);
+  border-top: 1px solid var(--color-line);
+  box-shadow: 0 -4px 16px rgb(0 0 0 / 0.04);
+}
+
+.tab {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.3em;
+  min-width: 0;
+  /* ≥ 48px touch target (WCAG 2.5.5 / Material guidance). */
+  min-height: 3.5rem;
+  padding: 0.45em 0.25em;
+  border-radius: 0.9em;
+  color: var(--color-muted);
+  text-decoration: none;
+  font-size: 0.78rem;
+  font-weight: 500;
+  line-height: 1.1;
+  -webkit-tap-highlight-color: transparent;
+  transition:
+    color 0.15s,
+    background-color 0.15s;
+}
+
+.label {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 3.4em;
+  height: 1.9em;
+  border-radius: var(--radius-pill);
+  transition: background-color 0.15s;
+}
+
+.tab:active .icon {
+  background: var(--color-line-soft);
+}
+
+.tab[aria-current='page'] {
+  color: var(--color-ink);
+  font-weight: 700;
+}
+
+.tab[aria-current='page'] .icon {
+  background: var(--color-line-soft);
+  color: var(--color-accent);
+}
+
+.tab:focus-visible {
+  outline: 2px solid var(--color-ink);
+  outline-offset: -2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tab,
+  .icon {
+    transition: none;
+  }
+}

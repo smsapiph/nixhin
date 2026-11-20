@@ -1,0 +1,32 @@
+.card {
+  display: block;
+  /* Buttons centre their content vertically; pin cards to the top of their row/cell. */
+  align-self: start;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  text-align: left;
+  border-radius: 0.85em;
+}
+
+@media (hover: hover) {
+  .card:hover img {
+    transform: scale(1.04);
+  }
+}
+
+.row {
+  flex: 0 0 var(--card-width);
+  width: var(--card-width);
+  scroll-snap-align: start;
+}
+
+.grid {
+  width: 100%;
+}
+
+.body {
+  display: block;
+  margin-top: 0.7em;
+}

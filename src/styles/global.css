@@ -1,0 +1,87 @@
+@import './tokens.css';
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  background: var(--color-bg);
+}
+
+html {
+  scroll-behavior: smooth;
+  font-size: var(--font-size-base);
+  /* Stop iOS Safari from enlarging text when rotated to landscape. */
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+  }
+}
+
+body {
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  line-height: 1.6;
+}
+
+button,
+a {
+  -webkit-tap-highlight-color: transparent;
+  /* No double-tap-to-zoom delay on controls. */
+  touch-action: manipulation;
+}
+
+button,
+input {
+  font: inherit;
+  color: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 3px;
+}
+
+/* Larger focus ring for 10-foot (TV) viewing. */
+@media (min-width: 1760px) {
+  :focus-visible {
+    outline-width: 3px;
+    outline-offset: 4px;
+  }
+}
+
+h1,
+h2,
+p {
+  margin: 0;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  border: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}

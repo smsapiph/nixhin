@@ -1,0 +1,103 @@
+.scroller {
+  position: relative;
+  overflow-x: auto;
+  padding-bottom: 0.5em;
+  scrollbar-width: thin;
+}
+
+.week,
+.slots {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.week {
+  display: grid;
+  grid-template-columns: var(--schedule-columns);
+  gap: 0.75em;
+}
+
+.day {
+  min-height: 9em;
+  padding: 0.9em;
+  background: var(--color-surface);
+  border: 1px solid var(--color-line);
+  border-radius: 0.9em;
+}
+
+.day[data-today] {
+  border-color: var(--color-accent);
+}
+
+.dayHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 0.5em;
+  padding-bottom: 0.6em;
+  border-bottom: 1px solid var(--color-line-soft);
+}
+
+.dayName {
+  font-weight: 500;
+}
+
+.kanji {
+  color: var(--color-muted);
+  font-family: var(--font-serif);
+}
+
+.today {
+  color: var(--color-accent);
+  font-size: 0.72em;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.slot {
+  display: block;
+  width: 100%;
+  min-height: var(--tap-size);
+  margin: 0;
+  padding: 0.5em 0;
+  border: 0;
+  background: transparent;
+  text-align: left;
+}
+
+@media (hover: hover) {
+  .slot:hover .showTitle {
+    text-decoration: underline;
+  }
+}
+
+.skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9em;
+  padding-top: 0.8em;
+}
+
+.skelLine {
+  height: 2em;
+}
+
+.time {
+  display: block;
+  font-size: 0.75em;
+  color: var(--color-muted);
+}
+
+.showTitle {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+  font-size: 0.9em;
+  font-weight: 500;
+  line-height: 1.3;
+}

@@ -1,0 +1,228 @@
+.page {
+  max-width: var(--page-max-width);
+  margin: 0 auto;
+  padding: 0.75em var(--page-pad) var(--bottom-pad);
+}
+
+.back {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4em;
+  min-height: var(--tap-size);
+  padding: 0.5em 0;
+  border: 0;
+  background: transparent;
+  color: var(--color-ink-soft);
+  font-weight: 500;
+}
+
+.layout {
+  display: flex;
+  flex-direction: var(--watch-direction);
+  align-items: var(--watch-align);
+  gap: 2em;
+  margin-top: 0.75em;
+}
+
+.main {
+  flex: var(--player-flex);
+  min-width: 0;
+}
+
+.details {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1.2em;
+  margin-top: 1.4em;
+}
+
+.info {
+  flex: 1 1 18em;
+  min-width: 0;
+}
+
+.title {
+  margin-top: 0.2em;
+  font-family: var(--font-serif);
+  font-weight: 600;
+  font-size: 2em;
+  line-height: 1.15;
+}
+
+.subtitle {
+  margin-top: 0.3em;
+  color: var(--color-ink-soft);
+}
+
+.genres {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4em;
+  margin: 0.8em 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.genre {
+  padding: 0.2em 0.75em;
+  border: 1px solid var(--color-chip-line);
+  border-radius: var(--radius-pill);
+  font-size: 0.8em;
+  color: var(--color-ink-soft);
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6em 1.2em;
+}
+
+.external {
+  color: var(--color-ink);
+  font-size: 0.9em;
+  font-weight: 500;
+  text-decoration: underline;
+  text-decoration-color: var(--color-line-strong);
+  text-underline-offset: 0.3em;
+}
+
+.facts {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(9em, 1fr));
+  gap: 0.9em 1.5em;
+  margin: 1.4em 0 0;
+  padding: 1em 0;
+  border-top: 1px solid var(--color-line);
+  border-bottom: 1px solid var(--color-line);
+}
+
+.fact dt {
+  color: var(--color-muted);
+  font-size: 0.72em;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+}
+
+.fact dd {
+  margin: 0.15em 0 0;
+  font-weight: 500;
+}
+
+.synopsis {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8em;
+  max-width: 44em;
+  margin-top: 1.2em;
+  color: var(--color-ink-soft);
+}
+
+.note {
+  margin-top: 1.2em;
+  color: var(--color-muted);
+  font-size: 0.85em;
+}
+
+.more {
+  margin-top: var(--section-gap);
+}
+
+.moreTitle {
+  margin: 0.15em 0 1.1em;
+  font-family: var(--font-serif);
+  font-weight: 600;
+  font-size: 1.55em;
+  line-height: 1.2;
+}
+
+.errorBox {
+  margin-top: 1.5em;
+}
+
+.skelPlayer {
+  aspect-ratio: 16 / 9;
+  border-radius: 1em;
+}
+
+.skelTitle {
+  width: 60%;
+  height: 2em;
+  margin-top: 1.4em;
+}
+
+.skelLine {
+  height: 1em;
+  margin-top: 0.8em;
+}
+
+.skelAside {
+  flex: var(--sidebar-flex);
+  width: var(--sidebar-width);
+  min-height: 20em;
+  border-radius: 1em;
+}
+
+/* Scroll target for the player, clear of the sticky header. */
+.playerAnchor {
+  scroll-margin-top: 5em;
+}
+
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6em 1em;
+  margin-top: 0.9em;
+}
+
+.controlGroup {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4em;
+}
+
+.control {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.3em;
+  min-width: var(--tap-size);
+  min-height: var(--tap-size);
+  padding: 0 1em;
+  border: 1px solid var(--color-line-strong);
+  border-radius: var(--radius-pill);
+  background: transparent;
+  color: var(--color-ink);
+  font-size: 0.88em;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.control:disabled {
+  cursor: default;
+  opacity: 0.4;
+}
+
+.control[aria-pressed='true'] {
+  background: var(--color-ink);
+  border-color: var(--color-ink);
+  color: var(--color-on-dark);
+}
+
+@media (hover: hover) {
+  .control:hover:not(:disabled) {
+    border-color: var(--color-ink);
+  }
+}
+
+.nowPlaying {
+  min-width: 6.5em;
+  text-align: center;
+  font-family: var(--font-serif);
+  font-weight: 600;
+}

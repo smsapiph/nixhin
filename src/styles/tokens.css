@@ -1,0 +1,149 @@
+/*
+ * Design tokens. Colours are global; layout tokens change per breakpoint.
+ * Breakpoints must stay in sync with src/hooks/useLayout.ts.
+ *   phone  < 640px  (default, mobile-first)
+ *   tablet ≥ 640px
+ *   laptop ≥ 1100px
+ *   tv     ≥ 1760px
+ *
+ * `em` values resolve against the font size of the element that uses them.
+ */
+:root {
+  --color-bg: #f6f4ef;
+  --color-surface: #ffffff;
+  --color-ink: #1c1b22;
+  --color-ink-soft: #3d3c45;
+  --color-muted: #6b6a73;
+  --color-faint: #9a98a0;
+  --color-line: #e4e1da;
+  --color-line-soft: #edeae3;
+  --color-line-faint: #f0ede6;
+  --color-line-strong: #cfcac0;
+  --color-chip-line: #d9d5cc;
+  --color-accent: #b83d62;
+  --color-player: #111015;
+  --color-player-track: #4a4950;
+  --color-on-dark: #ffffff;
+
+  --font-sans: 'Zen Kaku Gothic New', system-ui, sans-serif;
+  --font-serif: 'Shippori Mincho', serif;
+
+  --radius-pill: 999px;
+  --tap-size: 2.75em;
+
+  /* Layout — phone */
+  --font-size-base: 15px;
+  --page-pad: 1.25em;
+  --page-max-width: none;
+  --card-width: 9.25em;
+  --continue-width: 15em;
+  --grid-columns: 2;
+  --section-gap: 3em;
+  --bottom-pad: 2em;
+  --search-width: 100%;
+  --chip-wrap: nowrap;
+  --header-gap: 1em;
+
+  --hero-top: 1.25em;
+  --hero-direction: column;
+  --hero-gap: 1.5em;
+  --hero-align: stretch;
+  --hero-text-basis: auto;
+  --hero-art-basis: auto;
+  --hero-art-width: 100%;
+  --hero-ratio: 4 / 3;
+  --hero-title-size: 2.1em;
+  --hero-text-order: 1;
+  --hero-art-order: 0;
+
+  --schedule-columns: repeat(7, 10em);
+
+  --watch-direction: column;
+  --watch-align: stretch;
+  --player-flex: 0 0 auto;
+  --sidebar-flex: 0 0 auto;
+  --sidebar-width: 100%;
+  --episodes-max-height: 22em;
+}
+
+@media (min-width: 640px) {
+  :root {
+    --font-size-base: 16px;
+    --page-pad: 2em;
+    --card-width: 10.5em;
+    --continue-width: 17em;
+    --grid-columns: 3;
+    --section-gap: 3.5em;
+    --bottom-pad: 2.5em;
+    --search-width: 15em;
+    --chip-wrap: wrap;
+    --header-gap: 1.5em;
+
+    --hero-top: 2em;
+    --hero-direction: row;
+    --hero-gap: 2em;
+    --hero-align: center;
+    --hero-text-basis: 44%;
+    --hero-art-basis: 56%;
+    --hero-art-width: auto;
+    --hero-ratio: 4 / 5;
+    --hero-title-size: 2.4em;
+    --hero-text-order: 0;
+    --hero-art-order: 1;
+
+    --schedule-columns: repeat(7, 10.5em);
+    --episodes-max-height: 20em;
+  }
+}
+
+@media (min-width: 1100px) {
+  :root {
+    --page-pad: 3.5em;
+    --page-max-width: 1520px;
+    --card-width: 11.5em;
+    --continue-width: 19em;
+    --grid-columns: 5;
+    --section-gap: 4.5em;
+    --bottom-pad: 3em;
+    --search-width: 16em;
+    --header-gap: 2em;
+
+    --hero-top: 3em;
+    --hero-gap: 4em;
+    --hero-text-basis: 40%;
+    --hero-art-basis: 60%;
+    --hero-ratio: 16 / 10;
+    --hero-title-size: 3.4em;
+
+    --schedule-columns: repeat(7, minmax(0, 1fr));
+
+    --watch-direction: row;
+    --watch-align: flex-start;
+    --player-flex: 1 1 0;
+    --sidebar-flex: 0 0 22em;
+    --sidebar-width: 22em;
+    --episodes-max-height: 34em;
+  }
+}
+
+@media (min-width: 1760px) {
+  :root {
+    --font-size-base: 22px;
+    --page-pad: 4em;
+    --page-max-width: none;
+    --card-width: 10.5em;
+    --continue-width: 17em;
+    --grid-columns: 6;
+    --section-gap: 3.5em;
+    --search-width: 15em;
+
+    --hero-top: 2.5em;
+    --hero-gap: 3.5em;
+    --hero-ratio: 16 / 9;
+    --hero-title-size: 3.2em;
+
+    --sidebar-flex: 0 0 20em;
+    --sidebar-width: 20em;
+    --episodes-max-height: 28em;
+  }
+}

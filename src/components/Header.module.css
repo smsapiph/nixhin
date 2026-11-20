@@ -1,0 +1,162 @@
+.header {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  background: var(--color-bg);
+  border-bottom: 1px solid var(--color-line);
+}
+
+.bar {
+  display: flex;
+  align-items: center;
+  gap: var(--header-gap);
+  max-width: var(--page-max-width);
+  margin: 0 auto;
+  padding: 0.75em max(var(--page-pad), env(safe-area-inset-right)) 0.75em
+    max(var(--page-pad), env(safe-area-inset-left));
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 0.6em;
+  flex: 0 0 auto;
+  min-height: var(--tap-size);
+  color: var(--color-ink);
+  text-decoration: none;
+}
+
+.wordmark {
+  font-family: var(--font-serif);
+  font-weight: 700;
+  font-size: 1.4em;
+  letter-spacing: 0.08em;
+}
+
+.kana {
+  font-size: 0.7em;
+  color: var(--color-muted);
+  letter-spacing: 0.3em;
+}
+
+.nav {
+  display: flex;
+  align-items: center;
+  gap: 0.25em;
+  /* Pull the first pill's padding back so its text lines up with the page grid. */
+  margin-left: -0.9em;
+}
+
+.navLink {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--tap-size);
+  padding: 0 0.9em;
+  border-radius: var(--radius-pill);
+  color: var(--color-ink);
+  text-decoration: none;
+  font-weight: 500;
+  font-size: 0.95em;
+  white-space: nowrap;
+  transition: background-color 0.15s;
+}
+
+@media (hover: hover) {
+  .navLink:hover {
+    background: var(--color-line-soft);
+  }
+}
+
+.spacer {
+  flex: 1 1 auto;
+}
+
+.search {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.55em;
+  width: var(--search-width);
+  min-height: var(--tap-size);
+  padding: 0 1.1em;
+  background: var(--color-surface);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-pill);
+  color: var(--color-muted);
+}
+
+.search:focus-within {
+  border-color: var(--color-ink);
+}
+
+.searchInput {
+  width: 100%;
+  min-width: 0;
+  background: transparent;
+  border: 0;
+  outline: none;
+  color: var(--color-ink);
+  /* iOS Safari zooms the page when focusing an input under 16px. */
+  font-size: max(16px, 0.92em);
+  /* Drop the native iOS search-field styling (inner shadow, rounded inset). */
+  -webkit-appearance: none;
+  appearance: none;
+  border-radius: 0;
+}
+
+.searchInput::-webkit-search-decoration {
+  -webkit-appearance: none;
+}
+
+.roundButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--tap-size);
+  height: var(--tap-size);
+  background: transparent;
+  border: 1px solid var(--color-line);
+  border-radius: 50%;
+  color: var(--color-ink);
+}
+
+@media (hover: hover) {
+  .roundButton:hover {
+    background: var(--color-line-soft);
+  }
+}
+
+.bar > .roundButton + .roundButton,
+.bar > .search + .roundButton {
+  margin-left: calc(0.6em - var(--header-gap)); /* icon buttons sit closer together */
+}
+
+.panel {
+  padding: 0 var(--page-pad) 0.9em;
+}
+
+.panel .search {
+  width: 100%;
+}
+
+.menu {
+  display: flex;
+  flex-direction: column;
+  padding: 0.25em var(--page-pad) 1em;
+  border-top: 1px solid var(--color-line);
+}
+
+.menuLink {
+  display: flex;
+  align-items: center;
+  min-height: var(--tap-size);
+  padding: 0.55em 0;
+  color: var(--color-ink);
+  text-decoration: none;
+  font-weight: 500;
+  border-bottom: 1px solid var(--color-line-soft);
+}
+
+.menuLink:last-child {
+  border-bottom: 0;
+}

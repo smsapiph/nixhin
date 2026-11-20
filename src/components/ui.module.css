@@ -1,0 +1,130 @@
+.eyebrow {
+  display: block;
+  font-size: 0.72em;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--color-muted);
+}
+
+.muted {
+  color: var(--color-muted);
+  font-size: 0.85em;
+}
+
+.dot {
+  display: inline-block;
+  border-radius: 50%;
+  background: var(--color-accent);
+}
+
+.sectionHeader {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 0.5em 1em;
+  margin-bottom: 1.1em;
+}
+
+/* The heading takes the free space and wraps itself; the aside (a link or note) stays beside it. */
+.sectionHeader > :first-child {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.sectionHeader > :not(:first-child) {
+  flex: 0 1 auto;
+  text-align: right;
+}
+
+.sectionTitle {
+  margin-top: 0.15em;
+  font-family: var(--font-serif);
+  font-weight: 600;
+  font-size: 1.55em;
+  line-height: 1.2;
+}
+
+.textLink {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--tap-size);
+  padding: 0 0.1em;
+  color: var(--color-ink);
+  font-size: 0.9em;
+  font-weight: 500;
+  white-space: nowrap;
+  text-decoration: underline;
+  text-decoration-color: var(--color-line-strong);
+  text-underline-offset: 0.3em;
+}
+
+@media (hover: hover) {
+  .textLink:hover {
+    text-decoration-color: currentColor;
+  }
+}
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55em;
+  min-height: 3em;
+  padding: 0 1.45em;
+  border-radius: var(--radius-pill);
+  font-weight: 500;
+  transition: background-color 0.15s, border-color 0.15s;
+}
+
+.primary {
+  background: var(--color-ink);
+  color: var(--color-on-dark);
+  border: 0;
+}
+
+@media (hover: hover) {
+  .primary:hover {
+    background: #33313c;
+  }
+}
+
+.outline {
+  background: transparent;
+  color: var(--color-ink);
+  border: 1px solid var(--color-line-strong);
+}
+
+@media (hover: hover) {
+  .outline:hover {
+    border-color: var(--color-ink);
+  }
+}
+
+.scrollRow {
+  /* Containing block for absolutely positioned descendants (e.g. .sr-only text),
+     so they are clipped by the scroller instead of widening the page. */
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  gap: 1.25em;
+  overflow-x: auto;
+  padding-bottom: 0.5em;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: thin;
+}
+
+.cardTitle {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+  overflow: hidden;
+  font-weight: 500;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.cardSubtitle {
+  display: block;
+  color: var(--color-muted);
+  font-size: 0.82em;
+}
