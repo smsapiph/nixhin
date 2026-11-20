@@ -122,6 +122,20 @@ src/
   styles/              design tokens (per-breakpoint CSS variables) + globals
 ```
 
+## Deploying to Netlify
+
+`netlify.toml` deploys both halves from this repo: the frontend is built to `dist/`, and the API runs as one
+Netlify Function (`server/netlify/functions/api.ts`) mounted at `/api/*`, so the browser calls same-origin
+`/api` with no CORS. The function reuses the same Hono app as `server/src/index.ts` (`server/src/bootstrap.ts`),
+and rate-limits on Netlify's `context.ip`.
+
+- Set runtime config (e.g. `STREAM_EMBED_TEMPLATE`, `STREAM_LANGUAGES`) in **Site configuration →
+  Environment variables**, with a scope that includes **Functions**. Values in `netlify.toml` are not visible to
+  functions. Redeploy after changing them.
+- If you change the stream provider, update `frame-src` in the CSP in `netlify.toml`.
+- Cache, rate limiter and upstream throttle are per function instance, so under load several warm instances can
+  together exceed AniList's 30 req/min (they back off on 429). Use a shared store if that becomes a problem.
+
 ## Before deploying
 
 - Serve the frontend with a Content-Security-Policy, e.g.

@@ -68,10 +68,13 @@ export function rateLimit({
 }
 
 /**
- * Resolves the client IP. X-Forwarded-For is only honoured when explicitly trusted,
- * and then only its last hop (the address our single trusted proxy observed).
+ * Resolves the client IP. A platform-provided IP (the Netlify function passes `clientIp` as a
+ * binding, out of reach of request input) wins. X-Forwarded-For is only honoured when explicitly
+ * trusted, and then only its last hop (the address our single trusted proxy observed).
  */
 export function clientIp(c: Context, trustProxy: boolean): string {
+  const platformIp: unknown = (c.env as { clientIp?: unknown } | undefined)?.clientIp;
+  if (typeof platformIp === 'string' && platformIp) return platformIp;
   if (trustProxy) {
     const forwarded = c.req
       .header('x-forwarded-for')

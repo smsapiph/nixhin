@@ -1,0 +1,36 @@
+# Netlify deploys the Vite frontend (dist/) and the Hono API as one Netlify Function
+# (server/netlify/functions/api.ts, mounted at /api/*), so the browser calls same-origin /api.
+
+[build]
+  # Netlify installs the root dependencies itself; the API's live in server/.
+  command = "npm ci --prefix server && npm run typecheck --prefix server && npm run build"
+  publish = "dist"
+
+[build.environment]
+  NODE_VERSION = "22"
+
+[functions]
+  directory = "server/netlify/functions"
+  node_bundler = "esbuild"
+
+# SPA fallback: serve index.html for any path that is not a file. /api/* never reaches this,
+# because a function with a configured path runs before redirects.
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    # If you change STREAM_EMBED_TEMPLATE to another provider, update frame-src to its origin.
+    Content-Security-Policy = "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: https://s4.anilist.co https://img.anili.st https://i.ytimg.com https://img.youtube.com; frame-src https://www.youtube-nocookie.com https://megaplay.buzz; connect-src 'self'; base-uri 'self'; form-action 'self'; object-src 'none'; frame-ancestors 'none'"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    Permissions-Policy = "camera=(), microphone=(), geolocation=()"
+
+# Vite fingerprints everything under /assets, so it can be cached forever.
+[[headers]]
+  for = "/assets/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
