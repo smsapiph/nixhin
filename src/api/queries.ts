@@ -6,6 +6,7 @@ import type {
   Episode,
   Genre,
   Page,
+  SeasonEntry,
   StreamConfig,
   StreamSource,
   TopFilter,
@@ -36,7 +37,8 @@ export const queryKeys = {
   search: (query: string | undefined, genre: string | undefined) =>
     ['anime', 'search', { query, genre }] as const,
   anime: (id: number) => ['anime', id] as const,
-  episodes: (id: number) => ['anime', id, 'episodes'] as const,
+  episodes: (id: number, page: number) => ['anime', id, 'episodes', page] as const,
+  seasons: (id: number) => ['anime', id, 'seasons'] as const,
   recommendations: (id: number) => ['anime', id, 'recommendations'] as const,
   genres: () => ['genres'] as const,
   schedule: () => ['schedule'] as const,
@@ -88,14 +90,25 @@ export function useAnime(id: number) {
   });
 }
 
-export function useEpisodes(id: number) {
-  return useInfiniteQuery({
-    queryKey: queryKeys.episodes(id),
-    queryFn: ({ pageParam, signal }) =>
-      apiGet<Page<Episode>>(`/anime/${id}/episodes`, { page: pageParam }, signal),
-    initialPageParam: 1,
-    getNextPageParam: nextPage,
+/** Episodes per backend page; the episode list's ranges ("1–50", "51–100", …) line up with it. */
+export const EPISODES_PAGE_SIZE = 50;
+
+/** One page of episodes. Keeps the previous page on screen while the next range loads. */
+export function useEpisodePage(id: number, page: number) {
+  return useQuery({
+    queryKey: queryKeys.episodes(id, page),
+    queryFn: ({ signal }) => apiGet<Page<Episode>>(`/anime/${id}/episodes`, { page }, signal),
+    placeholderData: (previous, previousQuery) =>
+      previousQuery?.queryKey[1] === id ? previous : undefined,
     staleTime: 30 * MINUTE,
+  });
+}
+
+export function useSeasons(id: number) {
+  return useQuery({
+    queryKey: queryKeys.seasons(id),
+    queryFn: ({ signal }) => apiGet<SeasonEntry[]>(`/anime/${id}/seasons`, {}, signal),
+    staleTime: 60 * MINUTE,
   });
 }
 

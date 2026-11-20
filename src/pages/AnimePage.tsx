@@ -1,8 +1,8 @@
 import { useRef, useState } from 'react';
 import { useSearchParams } from 'react-router';
-import type { AnimeDetail, AnimeRef } from '../../shared/api';
+import type { AnimeDetail, AnimeRef, SeasonEntry } from '../../shared/api';
 import { ApiError } from '../api/client';
-import { useAnime, useRecommendations, useStreamConfig } from '../api/queries';
+import { useAnime, useRecommendations, useSeasons, useStreamConfig } from '../api/queries';
 import { CardRowSkeleton, Block, EmptyNotice, ErrorNotice, LoadingStatus } from '../components/feedback';
 import { Icon } from '../components/Icon';
 import { ShowCard } from '../components/ShowCard';
@@ -46,6 +46,7 @@ export function AnimePage({ id, isQueued, onToggleQueue, onOpen, onBack }: Anime
       ) : (
         <>
           <Watch anime={anime} queued={isQueued(anime.id)} onToggleQueue={onToggleQueue} />
+          <Seasons id={anime.id} onOpen={onOpen} />
           <Recommendations id={anime.id} onOpen={onOpen} />
         </>
       )}
@@ -76,7 +77,8 @@ function Watch({ anime, queued, onToggleQueue }: WatchProps) {
   const [showTrailer, setShowTrailer] = useState(false);
   const playerRef = useRef<HTMLDivElement>(null);
 
-  const lastEpisode = anime.episodes;
+  // Ongoing shows (One Piece) have no episode total; bound playback by what has aired instead.
+  const lastEpisode = anime.airedEpisodes ?? anime.episodes;
   const episode = parseEpisode(params.get('ep'), lastEpisode);
   const langParam = params.get('lang');
   const currentLanguage = langParam && languages.includes(langParam) ? langParam : (languages[0] ?? 'sub');
@@ -174,7 +176,8 @@ function Watch({ anime, queued, onToggleQueue }: WatchProps) {
       </section>
       <EpisodeList
         animeId={anime.id}
-        totalEpisodes={anime.episodes}
+        airedEpisodes={anime.airedEpisodes}
+        airing={anime.airing}
         {...(playable && { current: watchingEpisode ? episode : null, onSelect: selectEpisode })}
       />
     </div>
@@ -197,7 +200,12 @@ function Details({ anime, queued, onToggleQueue, playable }: DetailsProps) {
   const facts: [string, string][] = [];
   if (score) facts.push(['Score', score]);
   if (anime.rank) facts.push(['Rank', `#${anime.rank}`]);
-  facts.push(['Episodes', formatEpisodes(anime.episodes)]);
+  facts.push([
+    'Episodes',
+    anime.episodes === null && anime.airing && anime.airedEpisodes
+      ? `${anime.airedEpisodes.toLocaleString()} aired · ongoing`
+      : formatEpisodes(anime.episodes),
+  ]);
   if (anime.status) facts.push(['Status', anime.status]);
   if (anime.duration) facts.push(['Duration', anime.duration]);
   if (anime.studios.length > 0) facts.push(['Studio', anime.studios.join(', ')]);
@@ -258,6 +266,41 @@ function Details({ anime, queued, onToggleQueue, playable }: DetailsProps) {
       </p>
     </>
   );
+}
+
+/** The franchise watch order (seasons, movies, OVAs), shown when the show is part of one. */
+function Seasons({ id, onOpen }: { readonly id: number; readonly onOpen: (id: number) => void }) {
+  const { data, isPending, isError } = useSeasons(id);
+
+  // Like recommendations: optional, so hide on failure or for standalone shows.
+  if (isError || (data && data.length < 2)) return null;
+
+  return (
+    <section aria-labelledby="seasons-title" className={styles.more} aria-busy={isPending || undefined}>
+      <Eyebrow>Watch order · シーズン</Eyebrow>
+      <h2 id="seasons-title" className={styles.moreTitle}>
+        {data ? `Seasons & related (${data.length})` : 'Seasons & related'}
+      </h2>
+      {isPending ? (
+        <CardRowSkeleton />
+      ) : (
+        <ScrollRow>
+          {data.map((entry, index) => (
+            <ShowCard key={entry.id} anime={entry} onOpen={onOpen} current={entry.id === id}>
+              <TitleLines title={entry.title} subtitle={seasonLine(entry, index, entry.id === id)} />
+            </ShowCard>
+          ))}
+        </ScrollRow>
+      )}
+    </section>
+  );
+}
+
+/** "#3 · TV · 2017 · 12 eps", with "Now viewing" for the open title. */
+function seasonLine(entry: SeasonEntry, index: number, current: boolean): string {
+  const parts = [`#${index + 1}`, entry.type, entry.year, entry.airing ? 'Airing' : entry.episodes && `${entry.episodes} eps`];
+  const line = parts.filter(Boolean).join(' · ');
+  return current ? `Now viewing · ${line}` : line;
 }
 
 function Recommendations({ id, onOpen }: { readonly id: number; readonly onOpen: (id: number) => void }) {

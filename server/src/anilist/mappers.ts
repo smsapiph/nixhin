@@ -4,8 +4,9 @@ import {
   type AnimeRef,
   type AnimeSummary,
   type Broadcast,
+  type SeasonEntry,
 } from '../../../shared/api.js';
-import type { RawMedia, RawMediaDetail } from './schemas.js';
+import type { RawFranchiseNode, RawMedia, RawMediaDetail } from './schemas.js';
 
 /** Hosts we allow image URLs from; anything else is dropped before reaching the browser. */
 const IMAGE_HOSTS: ReadonlySet<string> = new Set(['s4.anilist.co', 'img.anili.st', 'i.ytimg.com', 'img.youtube.com']);
@@ -135,6 +136,30 @@ export function toAnimeSummary(media: RawMedia): AnimeSummary {
   };
 }
 
+/**
+ * Episodes released so far. Ongoing shows count up to the next airing episode, because
+ * their `episodes` total is usually null (One Piece) or the planned, not aired, count.
+ */
+export function airedEpisodeCount(media: {
+  readonly status?: string | null | undefined;
+  readonly episodes?: number | null | undefined;
+  readonly nextAiringEpisode?: { readonly episode: number } | null | undefined;
+}): number | null {
+  if (media.status === 'NOT_YET_RELEASED') return 0;
+  if (media.status === 'RELEASING' && media.nextAiringEpisode) return Math.max(0, media.nextAiringEpisode.episode - 1);
+  return media.episodes ?? null;
+}
+
+export function toSeasonEntry(media: RawFranchiseNode): SeasonEntry {
+  return {
+    ...toAnimeRef(media),
+    type: media.format ? (FORMAT_LABELS[media.format] ?? media.format) : null,
+    year: media.startDate?.year ?? media.seasonYear ?? null,
+    episodes: media.episodes ?? null,
+    airing: media.status === 'RELEASING',
+  };
+}
+
 export function toAnimeDetail(media: RawMediaDetail): AnimeDetail {
   const youtubeId = youtubeTrailerId(media.trailer);
   const rank = media.rankings?.find((r) => r.type === 'RATED' && r.allTime)?.rank ?? null;
@@ -150,6 +175,7 @@ export function toAnimeDetail(media: RawMediaDetail): AnimeDetail {
     // Built from the id rather than trusting an upstream URL.
     sourceUrl: `https://anilist.co/anime/${media.id}`,
     malId: media.idMal ?? null,
+    airedEpisodes: airedEpisodeCount(media),
   };
 }
 

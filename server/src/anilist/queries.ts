@@ -72,19 +72,59 @@ export const DETAIL_QUERY = /* GraphQL */ `
   ${MEDIA_SUMMARY}
 `;
 
+/*
+ * Air dates come from the top-level `airingSchedules`, filtered by episode range. The nested
+ * `Media.airingSchedule` only keeps the latest ~500 entries (One Piece's start at ep 1123), so
+ * paging it by page number does not line up with episode numbers on long-running shows.
+ */
 export const EPISODES_QUERY = /* GraphQL */ `
-  query Episodes($id: Int!, $page: Int!, $perPage: Int!) {
+  query Episodes($id: Int!, $after: Int!, $before: Int!, $perPage: Int!) {
     Media(id: $id, type: ANIME) {
       isAdult
       episodes
       status
       nextAiringEpisode { episode }
       streamingEpisodes { title }
-      airingSchedule(page: $page, perPage: $perPage) {
-        nodes { episode airingAt }
+    }
+    Page(page: 1, perPage: $perPage) {
+      airingSchedules(mediaId: $id, episode_greater: $after, episode_lesser: $before, sort: [EPISODE]) {
+        episode
+        airingAt
       }
     }
   }
+`;
+
+const FRANCHISE_NODE = /* GraphQL */ `
+  fragment FranchiseNode on Media {
+    id
+    type
+    isAdult
+    format
+    status
+    episodes
+    title { romaji english native }
+    coverImage { large extraLarge }
+    startDate { year month day }
+    seasonYear
+  }
+`;
+
+/**
+ * A media node with two levels of relations, so each request walks two hops of a sequel chain.
+ * AniList returns empty `relations` below the second level, so going deeper gains nothing.
+ */
+export const FRANCHISE_QUERY = /* GraphQL */ `
+  query Franchise($id: Int!) {
+    Media(id: $id, type: ANIME) {
+      ...FranchiseNode
+      relations { edges { relationType node {
+        ...FranchiseNode
+        relations { edges { relationType node { ...FranchiseNode } } }
+      } } }
+    }
+  }
+  ${FRANCHISE_NODE}
 `;
 
 export const RECOMMENDATIONS_QUERY = /* GraphQL */ `

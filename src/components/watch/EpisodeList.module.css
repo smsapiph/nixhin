@@ -44,7 +44,9 @@
 }
 
 .number {
-  flex: 0 0 2.2em;
+  flex: 0 0 auto;
+  min-width: 2.2em;
+  font-variant-numeric: tabular-nums;
   font-family: var(--font-serif);
   font-weight: 600;
   color: var(--color-faint);
@@ -109,4 +111,87 @@
 
 .selectable[aria-current='true'] .number {
   color: var(--color-accent);
+}
+
+.targeted {
+  background: var(--color-line-soft);
+  box-shadow: inset 3px 0 0 var(--color-accent);
+}
+
+.stale {
+  opacity: 0.55;
+  transition: opacity 0.15s;
+}
+
+/* Range picker + "go to episode" for long-running shows. */
+.pager {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5em;
+  margin-top: 0.7em;
+}
+
+.pagerRow,
+.jump {
+  display: flex;
+  align-items: center;
+  gap: 0.35em;
+}
+
+.pagerButton,
+.range,
+.jumpInput {
+  min-height: var(--tap-size);
+  border: 1px solid var(--color-line-strong);
+  border-radius: var(--radius-pill);
+  background: transparent;
+  color: var(--color-ink);
+  font: inherit;
+  font-size: 0.88em;
+  font-weight: 600;
+}
+
+.pagerButton {
+  min-width: var(--tap-size);
+  padding: 0 0.8em;
+}
+
+.pagerButton:disabled {
+  cursor: default;
+  opacity: 0.4;
+}
+
+@media (hover: hover) {
+  .pagerButton:hover:not(:disabled),
+  .range:hover {
+    border-color: var(--color-ink);
+  }
+}
+
+.range {
+  padding: 0 0.8em;
+  background: var(--color-surface);
+  font-variant-numeric: tabular-nums;
+}
+
+.rangeText {
+  padding: 0 0.4em;
+  font-weight: 600;
+}
+
+.jumpInput {
+  width: 5.5em;
+  padding: 0 0.8em;
+  /* iOS Safari zooms the page when focusing an input under 16px. */
+  font-size: max(16px, 0.88em);
+  font-weight: 500;
+  -moz-appearance: textfield;
+}
+
+.jumpInput::-webkit-inner-spin-button,
+.jumpInput::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
 }

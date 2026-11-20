@@ -72,6 +72,20 @@ export interface AnimeDetail extends AnimeSummary {
   readonly sourceUrl: string;
   /** MyAnimeList id, when AniList knows it (some providers key on it). */
   readonly malId: number | null;
+  /**
+   * Episodes released so far: `episodes` for finished shows, the count up to the next airing
+   * episode for ongoing ones (One Piece has `episodes: null`), 0 before release. Null if unknown.
+   */
+  readonly airedEpisodes: number | null;
+}
+
+/** One entry of a franchise's watch order: seasons, movies and OVAs linked as sequel/prequel. */
+export interface SeasonEntry extends AnimeRef {
+  /** Format label, e.g. "TV", "Movie". */
+  readonly type: string | null;
+  readonly year: number | null;
+  readonly episodes: number | null;
+  readonly airing: boolean;
 }
 
 /** Whether episode playback is configured on the server, and in which audio/subtitle variants. */

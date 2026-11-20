@@ -73,12 +73,72 @@ export const EpisodesData = z.object({
     status: z.string().nullish(),
     nextAiringEpisode: z.object({ episode: z.number().int() }).nullish(),
     streamingEpisodes: z.array(z.object({ title: z.string().nullish() })).nullish(),
-    airingSchedule: z
+  }),
+  Page: z
+    .object({
+      airingSchedules: z
+        .array(z.object({ episode: z.number().int(), airingAt: z.number().int() }).nullable())
+        .nullish(),
+    })
+    .nullish(),
+});
+
+const StartDate = z.object({
+  year: z.number().int().nullish(),
+  month: z.number().int().nullish(),
+  day: z.number().int().nullish(),
+});
+
+/** A franchise node; `relations` is present on every level except the deepest one fetched. */
+export interface RawFranchiseNode {
+  readonly id: number;
+  readonly type?: string | null | undefined;
+  readonly isAdult?: boolean | null | undefined;
+  readonly format?: string | null | undefined;
+  readonly status?: string | null | undefined;
+  readonly episodes?: number | null | undefined;
+  readonly title?: z.infer<typeof Title> | null | undefined;
+  readonly coverImage?: z.infer<typeof CoverImage> | null | undefined;
+  readonly startDate?: z.infer<typeof StartDate> | null | undefined;
+  readonly seasonYear?: number | null | undefined;
+  readonly relations?:
+    | {
+        readonly edges?:
+          | readonly ({
+              readonly relationType?: string | null | undefined;
+              readonly node?: RawFranchiseNode | null | undefined;
+            } | null)[]
+          | null
+          | undefined;
+      }
+    | null
+    | undefined;
+}
+
+export const RawFranchiseNode: z.ZodType<RawFranchiseNode> = z.lazy(() =>
+  z.object({
+    id: z.number().int().positive(),
+    type: z.string().nullish(),
+    isAdult: z.boolean().nullish(),
+    format: z.string().nullish(),
+    status: z.string().nullish(),
+    episodes: z.number().int().nullish(),
+    title: Title.nullish(),
+    coverImage: CoverImage.nullish(),
+    startDate: StartDate.nullish(),
+    seasonYear: z.number().int().nullish(),
+    relations: z
       .object({
-        nodes: z.array(z.object({ episode: z.number().int(), airingAt: z.number().int() }).nullable()).nullish(),
+        edges: z
+          .array(z.object({ relationType: z.string().nullish(), node: RawFranchiseNode.nullish() }).nullable())
+          .nullish(),
       })
       .nullish(),
   }),
+);
+
+export const FranchiseData = z.object({
+  Media: z.unknown(),
 });
 
 export const RawRecommendationTarget = z.object({

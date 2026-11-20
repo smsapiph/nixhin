@@ -5,6 +5,7 @@ import type {
   Episode,
   Genre,
   Page,
+  SeasonEntry,
   TopFilter,
 } from '../../shared/api.js';
 
@@ -27,6 +28,8 @@ export interface AnimeCatalog {
   anime(id: number): Promise<AnimeDetail>;
   episodes(id: number, page: number): Promise<Page<Episode>>;
   recommendations(id: number): Promise<readonly AnimeRef[]>;
+  /** The franchise watch order this anime belongs to (itself included), oldest first. */
+  seasons(id: number): Promise<readonly SeasonEntry[]>;
   genres(): Promise<readonly Genre[]>;
   schedule(): Promise<readonly AnimeSummary[]>;
 }

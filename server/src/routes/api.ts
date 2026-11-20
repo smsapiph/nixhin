@@ -52,6 +52,11 @@ export function apiRoutes(catalog: AnimeCatalog, streams: EmbedStreams): Hono {
     return cachedJson(c, await catalog.recommendations(id), 30 * MINUTE);
   });
 
+  api.get('/anime/:id/seasons', async (c) => {
+    const { id } = parseInput(IdParams, c.req.param());
+    return cachedJson(c, await catalog.seasons(id), 60 * MINUTE);
+  });
+
   api.get('/stream/config', (c) => cachedJson(c, streams.config(), 5 * MINUTE));
 
   api.get('/anime/:id/stream', async (c) => {

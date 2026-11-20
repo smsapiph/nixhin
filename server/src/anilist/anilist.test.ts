@@ -205,8 +205,8 @@ describe('AniListCatalog', () => {
             status: 'RELEASING',
             nextAiringEpisode: { episode: 4 },
             streamingEpisodes: [{ title: 'Episode 1 - Departure' }],
-            airingSchedule: { nodes: [{ episode: 1, airingAt: 1_790_000_000 }, null] },
           },
+          Page: { airingSchedules: [{ episode: 1, airingAt: 1_790_000_000 }, null] },
         },
       }),
     );
@@ -214,6 +214,72 @@ describe('AniListCatalog', () => {
     expect(page.items.map((e) => e.number)).toEqual([1, 2, 3]);
     expect(page.items[0]).toMatchObject({ title: 'Departure', aired: new Date(1_790_000_000_000).toISOString() });
     expect(page.hasNextPage).toBe(false);
+  });
+
+  it('pages long-running shows by episode number and asks for that range of air dates', async () => {
+    const fetchImpl = vi.fn(async () =>
+      json({
+        data: {
+          Media: { isAdult: false, episodes: null, status: 'RELEASING', nextAiringEpisode: { episode: 1181 } },
+          Page: { airingSchedules: [{ episode: 1151, airingAt: 1_764_512_160 }] },
+        },
+      }),
+    );
+    const page = await new AniListCatalog(makeClient(fetchImpl), { now }).episodes(21, 24);
+    expect(page.items.map((e) => e.number)).toEqual(Array.from({ length: 30 }, (_, i) => 1151 + i));
+    expect(page.items[0]?.aired).toBe(new Date(1_764_512_160_000).toISOString());
+    expect(page.hasNextPage).toBe(false);
+    const body = JSON.parse(String((fetchImpl.mock.calls[0] as unknown as [string, RequestInit])[1].body));
+    expect(body.variables).toMatchObject({ id: 21, after: 1150, before: 1201 });
+  });
+
+  it('walks sequel/prequel links into a dated watch order', async () => {
+    const node = (id: number, year: number, extra: object = {}) => ({
+      id,
+      type: 'ANIME',
+      isAdult: false,
+      format: 'TV',
+      status: 'FINISHED',
+      episodes: 12,
+      title: { romaji: `Show ${id}` },
+      startDate: { year, month: 4, day: 1 },
+      ...extra,
+    });
+    const edge = (relationType: string, n: object | null) => ({ relationType, node: n });
+    // Relations two levels down are untrusted (AniList empties them), so 4 and then 5 are refetched.
+    const movie = (id: number, year: number, extra: object = {}) => node(id, year, { format: 'MOVIE', ...extra });
+    const responses: Record<number, object> = {
+      2: node(2, 2014, {
+        relations: {
+          edges: [
+            edge('PREQUEL', node(1, 2013, { relations: { edges: [] } })),
+            edge('ADAPTATION', { ...node(90, 2010), type: 'MANGA', format: 'MANGA' }),
+            edge('SIDE_STORY', node(80, 2015, { relations: { edges: [] } })),
+            edge(
+              'SEQUEL',
+              node(3, 2016, {
+                relations: {
+                  edges: [
+                    edge('SEQUEL', node(4, 2018, { relations: { edges: [] } })),
+                    edge('SEQUEL', null),
+                  ],
+                },
+              }),
+            ),
+          ],
+        },
+      }),
+      4: node(4, 2018, { relations: { edges: [edge('PREQUEL', node(3, 2016)), edge('SEQUEL', movie(5, 2020))] } }),
+      5: movie(5, 2020, { relations: { edges: [edge('PREQUEL', node(4, 2018))] } }),
+    };
+    const fetchImpl = vi.fn(async (_url: string, init: RequestInit) => {
+      const { variables } = JSON.parse(String(init.body)) as { variables: { id: number } };
+      return json({ data: { Media: responses[variables.id] } });
+    });
+    const seasons = await new AniListCatalog(makeClient(fetchImpl as unknown as typeof fetch), { now }).seasons(2);
+    expect(seasons.map((s) => s.id)).toEqual([1, 2, 3, 4, 5]);
+    expect(seasons[4]).toMatchObject({ type: 'Movie', year: 2020 });
+    expect(fetchImpl).toHaveBeenCalledTimes(3);
   });
 
   it('rejects unknown genres and filters explicit ones', async () => {

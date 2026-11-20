@@ -30,6 +30,7 @@ const detail: AnimeDetail = {
   trailer: null,
   sourceUrl: 'https://anilist.co/anime/1',
   malId: 1,
+  airedEpisodes: 12,
 };
 
 function fakeCatalog(overrides: Partial<AnimeCatalog> = {}): AnimeCatalog {
@@ -40,6 +41,7 @@ function fakeCatalog(overrides: Partial<AnimeCatalog> = {}): AnimeCatalog {
     anime: vi.fn(async () => detail),
     episodes: vi.fn(async () => ({ items: [], page: 1, hasNextPage: false })),
     recommendations: vi.fn(async () => []),
+    seasons: vi.fn(async () => []),
     genres: vi.fn(async () => []),
     schedule: vi.fn(async () => []),
     ...overrides,

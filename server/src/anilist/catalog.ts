@@ -6,15 +6,25 @@ import type {
   Episode,
   Genre,
   Page,
+  SeasonEntry,
   TopFilter,
 } from '../../../shared/api.js';
 import type { AnimeCatalog, SearchParams } from '../catalog.js';
 import { UpstreamError } from '../errors.js';
 import type { AniListClient, Variables } from './client.js';
-import { jstBroadcast, streamingTitles, toAnimeDetail, toAnimeRef, toAnimeSummary } from './mappers.js';
+import {
+  airedEpisodeCount,
+  jstBroadcast,
+  streamingTitles,
+  toAnimeDetail,
+  toAnimeRef,
+  toAnimeSummary,
+  toSeasonEntry,
+} from './mappers.js';
 import {
   DETAIL_QUERY,
   EPISODES_QUERY,
+  FRANCHISE_QUERY,
   GENRES_QUERY,
   RECOMMENDATIONS_QUERY,
   SCHEDULE_QUERY,
@@ -25,9 +35,11 @@ import {
 import {
   DetailData,
   EpisodesData,
+  FranchiseData,
   GenresData,
   MediaPageData,
   RawAiring,
+  RawFranchiseNode,
   RawMedia,
   RawMediaDetail,
   RawRecommendationTarget,
@@ -40,6 +52,7 @@ const TTL = {
   lists: 10 * MINUTE,
   detail: 60 * MINUTE,
   episodes: 60 * MINUTE,
+  franchise: 24 * 60 * MINUTE,
   schedule: 30 * MINUTE,
   genres: 24 * 60 * MINUTE,
 } as const;
@@ -51,6 +64,24 @@ const RECOMMENDATION_LIMIT = 12;
 /** Hard cap on upstream pages fetched to build the weekly schedule. */
 const MAX_SCHEDULE_PAGES = 6;
 const WEEK_SECONDS = 7 * 24 * 60 * 60;
+/**
+ * Upstream requests one franchise walk may make; each walks two hops. Every fetched node is
+ * cached for a day, so opening another season of the same franchise mostly hits the cache.
+ */
+const MAX_FRANCHISE_REQUESTS = 8;
+/** Relation levels per FRANCHISE_QUERY response that AniList actually fills in. */
+const FRANCHISE_DEPTH = 2;
+const MAX_SEASONS = 40;
+const CHAIN_RELATIONS: ReadonlySet<string> = new Set(['SEQUEL', 'PREQUEL']);
+/** Formats shown in the watch order; music videos and the like are skipped. */
+const SEASON_FORMATS: ReadonlySet<string> = new Set(['TV', 'TV_SHORT', 'ONA', 'OVA', 'MOVIE', 'SPECIAL']);
+
+/** Sort key from a start date; undated (unannounced) entries go last. */
+function startKey(node: RawFranchiseNode): number {
+  const date = node.startDate;
+  if (!date?.year) return Number.MAX_SAFE_INTEGER;
+  return date.year * 10_000 + (date.month ?? 12) * 100 + (date.day ?? 31);
+}
 
 const TOP_OPTIONS: Readonly<Record<TopFilter, Variables>> = {
   airing: { status: 'RELEASING', sort: ['TRENDING_DESC', 'POPULARITY_DESC'] },
@@ -138,30 +169,25 @@ export class AniListCatalog implements AnimeCatalog {
   }
 
   async episodes(id: number, page: number): Promise<Page<Episode>> {
+    const first = (page - 1) * EPISODES_PER_PAGE + 1;
     const raw = await this.client.query(
       'episodes',
       EPISODES_QUERY,
-      { id, page, perPage: EPISODES_PER_PAGE },
+      { id, after: first - 1, before: first + EPISODES_PER_PAGE, perPage: EPISODES_PER_PAGE },
       TTL.episodes,
     );
-    const { Media: media } = parseOrThrow(EpisodesData, raw, 'episodes');
+    const { Media: media, Page: schedule } = parseOrThrow(EpisodesData, raw, 'episodes');
     if (media.isAdult) throw new UpstreamError('not_found', `Anime ${id} is not available`);
 
     // Only list episodes that have actually aired.
-    const aired =
-      media.status === 'RELEASING' && media.nextAiringEpisode
-        ? media.nextAiringEpisode.episode - 1
-        : media.status === 'NOT_YET_RELEASED'
-          ? 0
-          : (media.episodes ?? 0);
+    const aired = airedEpisodeCount(media) ?? 0;
 
     const airDates = new Map<number, number>();
-    for (const node of media.airingSchedule?.nodes ?? []) {
+    for (const node of schedule?.airingSchedules ?? []) {
       if (node) airDates.set(node.episode, node.airingAt);
     }
     const titles = streamingTitles(media.streamingEpisodes ?? []);
 
-    const first = (page - 1) * EPISODES_PER_PAGE + 1;
     const last = Math.min(page * EPISODES_PER_PAGE, aired);
     const items: Episode[] = [];
     for (let number = first; number <= last; number += 1) {
@@ -192,6 +218,67 @@ export class AniListCatalog implements AnimeCatalog {
       if (target.success && !target.data.isAdult && target.data.type === 'ANIME') refs.push(toAnimeRef(target.data));
     }
     return refs;
+  }
+
+  /**
+   * Walks SEQUEL/PREQUEL links (each request returns two levels of relations) to collect a
+   * franchise's watch order. Bounded by MAX_FRANCHISE_REQUESTS and MAX_SEASONS so a sprawling
+   * franchise can't eat the upstream rate limit; a failure after the first request returns what
+   * was found so far.
+   */
+  async seasons(id: number): Promise<readonly SeasonEntry[]> {
+    const found = new Map<number, RawFranchiseNode>();
+    const expanded = new Set<number>();
+    const pending: number[] = [];
+
+    // depth 0 is the fetched node; only depths below FRANCHISE_DEPTH carry trustworthy relations.
+    const visit = (node: RawFranchiseNode, depth: number) => {
+      if (node.type !== 'ANIME' || node.isAdult) return;
+      if (!found.has(node.id)) {
+        if (found.size >= MAX_SEASONS) return;
+        found.set(node.id, node);
+      }
+      if (expanded.has(node.id)) return;
+      if (depth >= FRANCHISE_DEPTH || !node.relations) {
+        // Deepest fetched level: its own links need another request.
+        if (!pending.includes(node.id)) pending.push(node.id);
+        return;
+      }
+      expanded.add(node.id);
+      for (const edge of node.relations.edges ?? []) {
+        if (edge?.node && edge.relationType && CHAIN_RELATIONS.has(edge.relationType)) visit(edge.node, depth + 1);
+      }
+    };
+
+    const fetchNode = async (nodeId: number) => {
+      const raw = await this.client.query('franchise', FRANCHISE_QUERY, { id: nodeId }, TTL.franchise);
+      const media = RawFranchiseNode.safeParse(parseOrThrow(FranchiseData, raw, 'franchise').Media);
+      if (!media.success) throw new UpstreamError('bad_response', `Unexpected franchise shape for anime ${nodeId}`);
+      return media.data;
+    };
+
+    const root = await fetchNode(id);
+    if (root.isAdult) throw new UpstreamError('not_found', `Anime ${id} is not available`);
+    visit(root, 0);
+
+    let requests = 1;
+    while (requests < MAX_FRANCHISE_REQUESTS && found.size < MAX_SEASONS) {
+      const next = pending.shift();
+      if (next === undefined) break;
+      if (expanded.has(next)) continue;
+      requests += 1;
+      try {
+        visit(await fetchNode(next), 0);
+      } catch (error) {
+        if (error instanceof UpstreamError) break;
+        throw error;
+      }
+    }
+
+    return [...found.values()]
+      .filter((node) => node.format && SEASON_FORMATS.has(node.format))
+      .toSorted((a, b) => startKey(a) - startKey(b) || a.id - b.id)
+      .map(toSeasonEntry);
   }
 
   async genres(): Promise<readonly Genre[]> {

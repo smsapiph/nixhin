@@ -30,3 +30,9 @@
   display: block;
   margin-top: 0.7em;
 }
+
+/* The title already open on the page (e.g. the current season in a watch-order row). */
+.card[aria-current='page'] img {
+  outline: 3px solid var(--color-accent);
+  outline-offset: -3px;
+}
