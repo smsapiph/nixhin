@@ -3,7 +3,7 @@ import styles from './Footer.module.css';
 
 const FOOTER_LINKS = ['About', 'Help', 'Request a show', 'Terms', 'Privacy'] as const;
 
-/** `showTmdb`: credit TMDB, as its terms require, once movies & TV are on. */
+/** `showTmdb`: movies & TV are on, so the blurb mentions them. */
 export function Footer({ showTmdb = false }: { readonly showTmdb?: boolean }) {
   return (
     <footer className={styles.footer}>
@@ -17,15 +17,7 @@ export function Footer({ showTmdb = false }: { readonly showTmdb?: boolean }) {
             {showTmdb ? 'Anime, movies and TV, free and quiet.' : 'Anime, free and quiet.'} No account needed — your queue
             stays on this device.
           </p>
-          {showTmdb && (
-            <p className={styles.credit}>
-              Anime data from AniList. Movie and TV data from{' '}
-              <a href="https://www.themoviedb.org/" className={styles.creditLink} target="_blank" rel="noreferrer">
-                TMDB
-              </a>
-              . This product uses the TMDB API but is not endorsed or certified by TMDB.
-            </p>
-          )}
+
         </div>
         <nav aria-label="Footer" className={styles.links}>
           {FOOTER_LINKS.map((label) => (

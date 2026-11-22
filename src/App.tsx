@@ -19,6 +19,7 @@ import { SearchPage } from './pages/SearchPage';
 import { MediaHomePage } from './pages/MediaHomePage';
 import { MediaPage } from './pages/MediaPage';
 import { MediaSearchPage } from './pages/MediaSearchPage';
+import { PersonPage } from './pages/PersonPage';
 import { MAX_QUERY_LENGTH, MODE_HOMES, animePath, homePath, mediaPath, modeForPath, searchPath } from './routes';
 import type { SectionId } from './types';
 import styles from './App.module.css';
@@ -153,6 +154,7 @@ export function App() {
           <Route path="/tv" element={<MediaHomePage key="tv" kind="tv" queue={queue} />} />
           <Route path="/movie/:id" element={<MediaRoute kind="movie" queue={queue} onOpen={openMedia} onBack={goBack} />} />
           <Route path="/tv/:id" element={<MediaRoute kind="tv" queue={queue} onOpen={openMedia} onBack={goBack} />} />
+          <Route path="/person/:id" element={<PersonRoute onOpen={openMedia} onBack={goBack} />} />
           <Route path="/search" element={<SearchRoute onOpen={openAnime} onOpenMedia={openMedia} onBack={goBack} />} />
           <Route path="*" element={<NotFoundPage onHome={() => navigate('top')} />} />
         </Routes>
@@ -185,6 +187,16 @@ function MediaRoute(props: MediaRouteProps) {
   const { id } = useParams();
   if (!id || !/^[1-9]\d{0,8}$/.test(id)) return <NotFoundPage onHome={props.onBack} />;
   return <MediaPage key={`${props.kind}-${id}`} id={Number(id)} {...props} />;
+}
+
+type PersonRouteProps = Omit<Parameters<typeof PersonPage>[0], 'id' | 'from'>;
+
+/** `/person/:id?from=tv` — an actor's or filmmaker's page. */
+function PersonRoute(props: PersonRouteProps) {
+  const { id } = useParams();
+  const [params] = useSearchParams();
+  if (!id || !/^[1-9]\d{0,8}$/.test(id)) return <NotFoundPage onHome={props.onBack} />;
+  return <PersonPage key={id} id={Number(id)} from={params.get('from') === 'tv' ? 'tv' : 'movie'} {...props} />;
 }
 
 interface SearchRouteProps extends Omit<Parameters<typeof SearchPage>[0], 'query'> {

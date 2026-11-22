@@ -68,6 +68,7 @@ All endpoints are `GET`, return JSON, and validate their inputs (400 with a clea
 | `/api/movie/:id`, `/api/tv/:id`       | Details: cast, trailer, rating, seasons, recommendations |
 | `/api/tv/:id/season/:n`               | Episodes of one season                      |
 | `/api/movie/collection/:id`           | A movie series in release order             |
+| `/api/person/:id`                     | An actor or filmmaker and their movies and shows |
 | `/api/movie/:id/stream`, `/api/tv/:id/stream?season=&episode=` | Encoded embed URL (provider) |
 | `/api/anime/:id/stream?episode=&language=` | Encoded embed URL for one episode (provider) |
 
@@ -136,8 +137,10 @@ Set `TMDB_READ_TOKEN` (the **API Read Access Token** from themoviedb.org → Set
   movies TMDB has no IMDb id for say "This movie is not available to play".
 - My queue and Continue watching hold all three kinds (anime entries saved before keep working); TV progress is
   tracked per season.
-- TMDB's terms ask for credit: the footer says "This product uses the TMDB API but is not endorsed or certified by
-  TMDB" when movies & TV are on. Commercial use needs a TMDB commercial licence.
+- Cast members open a person page (`/person/:id`, `/api/person/:id`) listing their movies and TV shows.
+- TMDB's terms ask for attribution ("This product uses the TMDB API but is not endorsed or certified by TMDB");
+  it is in this README, and movie/TV pages say "Movie and TV information from TMDB". Commercial use needs a TMDB
+  commercial licence.
 
 ## TV remote navigation
 

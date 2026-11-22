@@ -37,8 +37,9 @@ const movieDetail = {
   belongs_to_collection: { id: 726871, name: 'Dune Collection' },
   credits: {
     cast: [
-      { name: 'Zendaya', character: 'Chani', profile_path: '/z.jpg', order: 1 },
-      { name: 'Timothée Chalamet', character: 'Paul Atreides', profile_path: '/t.jpg', order: 0 },
+      { id: 505710, name: 'Zendaya', character: 'Chani', profile_path: '/z.jpg', order: 1 },
+      { id: 1190668, name: 'Timothée Chalamet', character: 'Paul Atreides', profile_path: '/t.jpg', order: 0 },
+      { name: 'No id', character: 'Extra', order: 2 },
     ],
     crew: [{ name: 'Denis Villeneuve', job: 'Director' }, { name: 'Hans Zimmer', job: 'Original Music Composer' }],
   },
@@ -92,6 +93,25 @@ const routes: Record<string, unknown> = {
   '/movie/693134': movieDetail,
   '/tv/126308': tvDetail,
   '/tv/126308/season/1': { episodes: [{ episode_number: 1, name: 'Anjin', air_date: '2024-02-27', runtime: 70, overview: ' Ship.  ' }] },
+  '/person/1190668': {
+    id: 1190668,
+    name: 'Timothée Chalamet',
+    profile_path: '/t.jpg',
+    known_for_department: 'Acting',
+    biography: 'Born in New York.\n\nActor.',
+    birthday: '1995-12-27',
+    place_of_birth: 'New York City, New York, USA',
+    combined_credits: {
+      cast: [
+        { ...dune, media_type: 'movie', character: 'Paul Atreides', popularity: 50 },
+        { ...dune, media_type: 'movie', character: 'Paul (young)', popularity: 50 },
+        { id: 438631, media_type: 'movie', title: 'Dune', character: 'Paul', popularity: 80, genre_ids: [878] },
+        { id: 1, media_type: 'tv', name: 'Late Show', character: 'Self', popularity: 99, genre_ids: [10767] },
+        { id: 2, media_type: 'tv', name: 'Homeland', character: 'Finn Walden', popularity: 20, genre_ids: [18], episode_count: 8 },
+      ],
+      crew: [],
+    },
+  },
   '/collection/726871': { id: 726871, name: 'Dune Collection', parts: [dune, { ...dune, id: 438631, title: 'Dune', release_date: '2021-09-15' }] },
 };
 
@@ -136,7 +156,10 @@ describe('TmdbCatalog', () => {
     const { catalog } = makeCatalog();
     const movie = await catalog.movie(693134);
     expect(movie.makers).toEqual(['Denis Villeneuve']);
-    expect(movie.cast.map((person) => person.name)).toEqual(['Timothée Chalamet', 'Zendaya']);
+    expect(movie.cast.map((person) => [person.id, person.name])).toEqual([
+      [1190668, 'Timothée Chalamet'],
+      [505710, 'Zendaya'],
+    ]);
     expect(movie.trailer).toEqual({ youtubeId: 'Way9Dexny3w' });
     expect(movie.rating).toBe('PG-13');
     expect(movie.runtime).toBe(167);
@@ -163,6 +186,17 @@ describe('TmdbCatalog', () => {
     ]);
     const collection = await catalog.collection(726871);
     expect(collection.parts.map((part) => part.title)).toEqual(['Dune', 'Dune: Part Two']);
+  });
+
+  it('lists a person’s movies and shows once each, most popular first, without talk-show appearances', async () => {
+    const { catalog } = makeCatalog();
+    const person = await catalog.person(1190668);
+    expect(person).toMatchObject({ name: 'Timothée Chalamet', knownFor: 'Acting', birthday: '1995-12-27', biography: 'Born in New York.\n\nActor.' });
+    expect(person.movies.map((credit) => [credit.title, credit.role])).toEqual([
+      ['Dune', 'Paul'],
+      ['Dune: Part Two', 'Paul Atreides'],
+    ]);
+    expect(person.shows.map((credit) => [credit.title, credit.role])).toEqual([['Homeland', 'Finn Walden']]);
   });
 
   it('caches identical requests', async () => {

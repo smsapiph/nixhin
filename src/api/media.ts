@@ -9,6 +9,7 @@ import type {
   MediaSummary,
   MovieList,
   Page,
+  PersonDetail,
   TvEpisode,
   TvList,
 } from '../../shared/api';
@@ -29,6 +30,7 @@ export const mediaKeys = {
   detail: (kind: MediaKind, id: number) => ['media', kind, id] as const,
   season: (id: number, season: number) => ['media', 'tv', id, 'season', season] as const,
   collection: (id: number) => ['media', 'collection', id] as const,
+  person: (id: number) => ['media', 'person', id] as const,
   stream: (kind: MediaKind, id: number, season: number | null, episode: number | null) =>
     ['media', kind, id, 'stream', season, episode] as const,
 };
@@ -109,6 +111,14 @@ export function useCollection(id: number | null) {
     queryKey: mediaKeys.collection(id ?? 0),
     queryFn: ({ signal }) => apiGet<MediaCollection>(`/movie/collection/${id ?? 0}`, {}, signal),
     enabled: id !== null,
+    staleTime: 60 * MINUTE,
+  });
+}
+
+export function usePerson(id: number) {
+  return useQuery({
+    queryKey: mediaKeys.person(id),
+    queryFn: ({ signal }) => apiGet<PersonDetail>(`/person/${id}`, {}, signal),
     staleTime: 60 * MINUTE,
   });
 }

@@ -1,13 +1,15 @@
 import type {
   CastMember,
   MediaDetail,
+  PersonCredit,
+  PersonDetail,
   MediaKind,
   MediaSummary,
   Trailer,
   TvEpisode,
   TvSeason,
 } from '../../../shared/api.js';
-import type { RawListItem, RawMovieDetail, RawTvDetail } from './schemas.js';
+import type { RawListItem, RawMovieDetail, RawPerson, RawPersonCredit, RawTvDetail } from './schemas.js';
 
 /** TMDB's image CDN; the only image host movie/TV data ever points at. */
 export const TMDB_IMAGE_ORIGIN = 'https://image.tmdb.org';
@@ -84,9 +86,11 @@ function trailer(raw: RawMovieDetail | RawTvDetail): Trailer | null {
 
 function cast(raw: RawMovieDetail | RawTvDetail): CastMember[] {
   return [...(raw.credits?.cast ?? [])]
+    .filter((person): person is typeof person & { id: number } => typeof person.id === 'number')
     .sort((a, b) => (a.order ?? 999) - (b.order ?? 999))
     .slice(0, MAX_CAST)
     .map((person) => ({
+      id: person.id,
       name: person.name,
       character: cleanText(person.character),
       imageUrl: imageUrl(person.profile_path, 'w185'),
@@ -217,5 +221,54 @@ export function toEpisode(raw: {
     aired: isoDate(raw.air_date),
     runtime: raw.runtime && raw.runtime > 0 ? raw.runtime : null,
     overview: cleanText(raw.overview),
+  };
+}
+
+/** Talk shows (10767) and news (10763): guest appearances, not roles. */
+const APPEARANCE_GENRES = new Set([10767, 10763]);
+const SELF = /^(?:self|himself|herself|themselves|narrator \(voice\))\b/i;
+const MAX_CREDITS = 60;
+/** Crew jobs worth listing for directors and writers. */
+const MAIN_JOBS = new Set(['Director', 'Creator', 'Screenplay', 'Writer', 'Novel']);
+
+/**
+ * A person's page: the cast credits of actors, or the main crew credits of directors and writers.
+ * One entry per title (an actor may have several characters in one show), most popular first.
+ */
+export function toPerson(raw: RawPerson, genres: { movie: GenreNames; tv: GenreNames }, parse: (value: unknown) => RawPersonCredit | null): PersonDetail {
+  const behindCamera = raw.known_for_department !== null && raw.known_for_department !== undefined && raw.known_for_department !== 'Acting';
+  const castCredits = (raw.combined_credits?.cast ?? []).map(parse).filter((c): c is RawPersonCredit => c !== null);
+  const crewCredits = (raw.combined_credits?.crew ?? [])
+    .map(parse)
+    .filter((c): c is RawPersonCredit => c !== null && MAIN_JOBS.has(c.job ?? ''));
+  const credits = behindCamera && crewCredits.length > 0 ? crewCredits : castCredits;
+
+  const seen = new Set<string>();
+  const byKind: Record<'movie' | 'tv', { credit: PersonCredit; popularity: number }[]> = { movie: [], tv: [] };
+  for (const credit of credits) {
+    if ((credit.genre_ids ?? []).some((id) => APPEARANCE_GENRES.has(id))) continue;
+    const role = cleanText(credit.character ?? credit.job);
+    if (role && SELF.test(role)) continue;
+    const kind = credit.media_type === 'tv' ? 'tv' : 'movie';
+    const summary = toSummary(credit, kind, genres[kind]);
+    const key = `${kind}:${credit.id}`;
+    if (!summary || seen.has(key)) continue;
+    seen.add(key);
+    byKind[kind].push({ credit: { ...summary, role }, popularity: credit.popularity ?? 0 });
+  }
+  const ranked = (list: { credit: PersonCredit; popularity: number }[]) =>
+    list.sort((a, b) => b.popularity - a.popularity).slice(0, MAX_CREDITS).map((entry) => entry.credit);
+
+  return {
+    id: raw.id,
+    name: raw.name,
+    imageUrl: imageUrl(raw.profile_path, 'w500'),
+    knownFor: cleanText(raw.known_for_department),
+    biography: raw.biography?.trim() ? raw.biography.trim() : null,
+    birthday: isoDate(raw.birthday),
+    deathday: isoDate(raw.deathday),
+    birthplace: cleanText(raw.place_of_birth),
+    movies: ranked(byKind.movie),
+    shows: ranked(byKind.tv),
   };
 }

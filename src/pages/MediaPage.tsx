@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-import { useSearchParams } from 'react-router';
-import type { MediaDetail, MediaKind, MediaSummary, TvSeason } from '../../shared/api';
+import { useNavigate, useSearchParams } from 'react-router';
+import type { CastMember, MediaDetail, MediaKind, MediaSummary, TvSeason } from '../../shared/api';
 import { ApiError } from '../api/client';
 import { useCollection, useMediaConfig, useMediaDetail } from '../api/media';
 import { Block, CardRowSkeleton, EmptyNotice, ErrorNotice, LoadingStatus } from '../components/feedback';
@@ -18,7 +18,7 @@ import { formatDate, formatScore } from '../lib/format';
 import { episodeKey, findProgress, progressStore, recordEpisode, setWatched, type ShowInfo } from '../lib/progress';
 import { isTv } from '../lib/tvDevice';
 import { mediaControlKey, requestPlayerControl } from '../lib/tvPlayer';
-import { mediaPath, tvPath } from '../routes';
+import { mediaPath, personPath, tvPath } from '../routes';
 import { ShareButton } from './AnimePage';
 import styles from './AnimePage.module.css';
 import own from './MediaPage.module.css';
@@ -57,6 +57,7 @@ export function MediaPage({ kind, id, queue, onOpen, onBack }: MediaPageProps) {
       ) : (
         <>
           <Watch detail={detail} queue={queue} />
+          {detail.kind === 'tv' && <CastRow detail={detail} />}
           {detail.collection && <Collection id={detail.collection.id} currentId={detail.id} onOpen={onOpen} />}
           <Recommendations items={detail.recommendations} onOpen={onOpen} />
         </>
@@ -348,6 +349,17 @@ function Details({ detail, queued, onToggleQueue, shareUrl, shareTitle }: Detail
   );
 }
 
+/** Round photo, or the first letter when TMDB has none. */
+function Avatar({ person }: { readonly person: CastMember }) {
+  return person.imageUrl ? (
+    <img className={own.avatar} src={imageSrc(person.imageUrl)} alt="" loading="lazy" referrerPolicy="no-referrer" />
+  ) : (
+    <span className={`${own.avatar} ${own.avatarFallback}`} aria-hidden="true">
+      {person.name.slice(0, 1)}
+    </span>
+  );
+}
+
 function CastPanel({
   detail,
   watched,
@@ -357,6 +369,7 @@ function CastPanel({
   readonly watched: boolean;
   readonly onToggleWatched: (watched: boolean) => void;
 }) {
+  const navigate = useNavigate();
   return (
     <aside aria-labelledby="cast-title" className={own.panel}>
       <div className={own.panelHeader}>
@@ -370,16 +383,17 @@ function CastPanel({
       ) : (
         <ul className={own.cast}>
           {detail.cast.slice(0, 8).map((person) => (
-            <li key={`${person.name}-${person.character ?? ''}`} className={own.person}>
-              {person.imageUrl ? (
-                <img className={own.avatar} src={imageSrc(person.imageUrl)} alt="" loading="lazy" referrerPolicy="no-referrer" />
-              ) : (
-                <span className={own.avatar} aria-hidden="true" />
-              )}
-              <span className={own.personText}>
-                <span className={own.personName}>{person.name}</span>
-                {person.character && <span className={own.personRole}>{person.character}</span>}
-              </span>
+            <li key={`${person.id}-${person.character ?? ''}`}>
+              <button type="button" className={own.person} onClick={() => navigate(personPath(person.id, detail.kind))}>
+                <Avatar person={person} />
+                <span className={own.personText}>
+                  <span className={own.personName}>{person.name}</span>
+                  {person.character && <span className={own.personRole}>{person.character}</span>}
+                </span>
+                <span className={own.chevron} aria-hidden="true">
+                  ›
+                </span>
+              </button>
             </li>
           ))}
         </ul>
@@ -398,6 +412,34 @@ function CastPanel({
 }
 
 /* ------------------------------------------------------------------ rows below */
+
+/** TV shows keep the side panel for episodes, so their cast is a row under the details. */
+function CastRow({ detail }: { readonly detail: MediaDetail }) {
+  const navigate = useNavigate();
+  if (detail.cast.length === 0) return null;
+  return (
+    <section aria-labelledby="cast-title" className={styles.more}>
+      <Eyebrow>Cast · キャスト</Eyebrow>
+      <h2 id="cast-title" className={styles.moreTitle}>
+        Cast
+      </h2>
+      <ScrollRow>
+        {detail.cast.map((person) => (
+          <button
+            key={`${person.id}-${person.character ?? ''}`}
+            type="button"
+            className={own.castCard}
+            onClick={() => navigate(personPath(person.id, detail.kind))}
+          >
+            <Avatar person={person} />
+            <span className={own.personName}>{person.name}</span>
+            {person.character && <span className={own.personRole}>{person.character}</span>}
+          </button>
+        ))}
+      </ScrollRow>
+    </section>
+  );
+}
 
 function Collection({ id, currentId, onOpen }: { readonly id: number; readonly currentId: number; readonly onOpen: (item: MediaSummary) => void }) {
   const { data, isPending, isError } = useCollection(id);
