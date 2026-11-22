@@ -108,7 +108,9 @@ export function animeMeta(anime: AnimeDetail, link: AnimeLink, siteUrl: string):
     url,
     image: `${siteUrl}${cardPath({ ...link, id: anime.id })}`,
     imageAlt: title.replace(` · ${SITE_NAME}`, ''),
-    type: link.episode !== null ? 'video.episode' : 'video.tv_show',
+    // Not video.episode / video.tv_show: Facebook expects og:video with those, and Messenger then
+    // drops the image and shows a text-only preview.
+    type: 'website',
   };
 }
 
@@ -134,6 +136,7 @@ export function renderMetaTags(meta: PageMeta): string {
     `<meta property="og:description" content="${a(meta.description)}" />`,
     `<meta property="og:url" content="${a(meta.url)}" />`,
     `<meta property="og:image" content="${a(meta.image)}" />`,
+    `<meta property="og:image:secure_url" content="${a(meta.image)}" />`,
     `<meta property="og:image:type" content="image/jpeg" />`,
     `<meta property="og:image:width" content="1200" />`,
     `<meta property="og:image:height" content="630" />`,
