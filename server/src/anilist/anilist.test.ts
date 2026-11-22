@@ -61,7 +61,6 @@ describe('mappers', () => {
       rank: 1,
       studios: ['Madhouse'],
       trailer: { youtubeId: 'qgQGf9FzwTU' },
-      sourceUrl: 'https://anilist.co/anime/154587',
       synopsis: 'An elf mage\n\noutlives her party & moves on.',
     });
     expect(detail).not.toHaveProperty('someNewField');
@@ -289,6 +288,30 @@ describe('AniListCatalog', () => {
     await expect(catalog.search({ genre: 'Hentai', page: 1, limit: 24 })).rejects.toMatchObject({
       kind: 'bad_request',
     });
+  });
+
+  it('maps browse filters to AniList variables', async () => {
+    const fetchImpl = vi.fn(async () => json({ data: { Page: { pageInfo: { currentPage: 1, hasNextPage: false }, media: [] } } }));
+    const catalog = new AniListCatalog(makeClient(fetchImpl as unknown as typeof fetch), { now });
+    await catalog.search({ year: 2023, season: 'fall', format: 'tv_short', status: 'airing', sort: 'score', page: 1, limit: 24 });
+    const [, init] = fetchImpl.mock.calls[0] as unknown as [string, RequestInit];
+    const { variables } = JSON.parse(String(init.body)) as { variables: Record<string, unknown> };
+    expect(variables).toMatchObject({
+      seasonYear: 2023,
+      season: 'FALL',
+      format: 'TV_SHORT',
+      status: 'RELEASING',
+      sort: ['SCORE_DESC', 'POPULARITY_DESC'],
+    });
+  });
+
+  it('leaves unset browse filters out of the variables', async () => {
+    const fetchImpl = vi.fn(async () => json({ data: { Page: { pageInfo: { currentPage: 1, hasNextPage: false }, media: [] } } }));
+    await new AniListCatalog(makeClient(fetchImpl as unknown as typeof fetch), { now }).search({ page: 1, limit: 24 });
+    const [, init] = fetchImpl.mock.calls[0] as unknown as [string, RequestInit];
+    const { variables } = JSON.parse(String(init.body)) as { variables: Record<string, unknown> };
+    // An explicit null would filter for titles *without* a season/format.
+    for (const key of ['seasonYear', 'season', 'format', 'status']) expect(variables).not.toHaveProperty(key);
   });
 
   it('hides adult titles on the detail endpoint', async () => {

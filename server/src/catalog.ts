@@ -5,6 +5,10 @@ import type {
   Episode,
   Genre,
   Page,
+  SearchFormat,
+  SearchSeason,
+  SearchSort,
+  SearchStatus,
   SeasonEntry,
   TopFilter,
 } from '../../shared/api.js';
@@ -12,6 +16,12 @@ import type {
 export interface SearchParams {
   readonly query?: string;
   readonly genre?: string;
+  readonly year?: number;
+  readonly season?: SearchSeason;
+  readonly format?: SearchFormat;
+  readonly status?: SearchStatus;
+  /** Defaults to best match for text searches, else popularity. */
+  readonly sort?: SearchSort;
   readonly page: number;
   readonly limit: number;
 }

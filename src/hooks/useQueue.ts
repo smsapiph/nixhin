@@ -1,6 +1,7 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback } from 'react';
 import type { AnimeRef } from '../../shared/api';
-import { loadQueue, saveQueue } from '../lib/queueStorage';
+import { queueStore } from '../lib/queueStorage';
+import { useStore } from './useStore';
 
 export interface QueueApi {
   readonly items: readonly AnimeRef[];
@@ -10,16 +11,12 @@ export interface QueueApi {
 
 /** The viewer's watch queue, persisted to this device. Newest first. */
 export function useQueue(): QueueApi {
-  const [items, setItems] = useState<readonly AnimeRef[]>(loadQueue);
-
-  useEffect(() => {
-    saveQueue(items);
-  }, [items]);
+  const items = useStore(queueStore);
 
   const isQueued = useCallback((id: number) => items.some((item) => item.id === id), [items]);
 
   const toggle = useCallback(({ id, title, imageUrl }: AnimeRef) => {
-    setItems((current) =>
+    queueStore.set((current) =>
       current.some((item) => item.id === id)
         ? current.filter((item) => item.id !== id)
         : [{ id, title, imageUrl }, ...current],

@@ -15,7 +15,13 @@ interface EpisodeListProps {
   readonly current?: number | null;
   /** When set, episodes become buttons that start playback. */
   readonly onSelect?: (episode: number) => void;
+  /** Episodes the viewer has marked watched. */
+  readonly watched?: ReadonlySet<number>;
+  /** When set, each episode gets a watched toggle. */
+  readonly onToggleWatched?: (episode: number, watched: boolean) => void;
 }
+
+const NO_EPISODES: ReadonlySet<number> = new Set();
 
 const pageOf = (episode: number) => Math.ceil(episode / EPISODES_PAGE_SIZE);
 
@@ -29,7 +35,15 @@ function rangeLabel(page: number, aired: number): string {
  * Episodes in ranges of 50 with a range picker and "go to episode", so a 1,000+ episode show
  * (One Piece) is a couple of taps away from any episode instead of dozens of "Load more" clicks.
  */
-export function EpisodeList({ animeId, airedEpisodes, airing, current = null, onSelect }: EpisodeListProps) {
+export function EpisodeList({
+  animeId,
+  airedEpisodes,
+  airing,
+  current = null,
+  onSelect,
+  watched = NO_EPISODES,
+  onToggleWatched,
+}: EpisodeListProps) {
   // The visible range follows the playing episode. Browsing another range is remembered only
   // until the playing episode moves to a different range, so no effect is needed to sync them.
   const playingPage = current === null ? 1 : pageOf(current);
@@ -65,6 +79,7 @@ export function EpisodeList({ animeId, airedEpisodes, airing, current = null, on
         </h2>
         {airedEpisodes !== null && airedEpisodes > 0 && (
           <Muted>
+            {watched.size > 0 && `${Math.min(watched.size, airedEpisodes).toLocaleString()} watched · `}
             {airedEpisodes.toLocaleString()} {airing ? 'aired' : 'total'}
           </Muted>
         )}
@@ -123,8 +138,13 @@ export function EpisodeList({ animeId, airedEpisodes, airing, current = null, on
                 </>
               );
               const isCurrent = episode.number === highlighted;
+              const isWatched = watched.has(episode.number);
               return (
-                <li key={episode.number} data-episode={episode.number}>
+                <li
+                  key={episode.number}
+                  data-episode={episode.number}
+                  className={`${styles.row} ${isWatched ? styles.watched : ''}`}
+                >
                   {onSelect ? (
                     <button
                       type="button"
@@ -136,6 +156,18 @@ export function EpisodeList({ animeId, airedEpisodes, airing, current = null, on
                     </button>
                   ) : (
                     <div className={`${styles.episode} ${isCurrent ? styles.targeted : ''}`}>{content}</div>
+                  )}
+                  {onToggleWatched && (
+                    <button
+                      type="button"
+                      className={styles.watchedToggle}
+                      aria-pressed={isWatched}
+                      aria-label={`Watched episode ${episode.number}`}
+                      title={isWatched ? 'Mark as not watched' : 'Mark as watched'}
+                      onClick={() => onToggleWatched(episode.number, !isWatched)}
+                    >
+                      <span aria-hidden="true">✓</span>
+                    </button>
                   )}
                 </li>
               );

@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router';
 import type { AnimeDetail, AnimeRef, SeasonEntry } from '../../shared/api';
 import { ApiError } from '../api/client';
@@ -9,6 +9,10 @@ import { ShowCard } from '../components/ShowCard';
 import { EpisodeList } from '../components/watch/EpisodeList';
 import { EpisodePlayer } from '../components/watch/EpisodePlayer';
 import { useDocumentTitle } from '../hooks/useDocumentTitle';
+import { useStore } from '../hooks/useStore';
+import { prefsStore, setPreferredLanguage } from '../lib/prefs';
+import { findProgress, progressStore, recordEpisode, resumeEpisode, setWatched } from '../lib/progress';
+import { animePath } from '../routes';
 import { TrailerPlayer } from '../components/watch/TrailerPlayer';
 import { Eyebrow, PillButton, ScrollRow, TitleLines } from '../components/ui';
 import { formatCompact, formatEpisodes, formatScore } from '../lib/format';
@@ -54,12 +58,15 @@ export function AnimePage({ id, isQueued, onToggleQueue, onOpen, onBack }: Anime
   );
 }
 
-/** `?ep=` → a valid episode number (1 … last), defaulting to 1 for missing or malformed values. */
-function parseEpisode(raw: string | null, last: number | null): number {
-  if (!raw || !/^[1-9]\d{0,3}$/.test(raw)) return 1;
+/** `?ep=` → a valid episode number (1 … last), else `fallback` for missing or malformed values. */
+function parseEpisode(raw: string | null, last: number | null, fallback: number): number {
+  if (!raw || !/^[1-9]\d{0,3}$/.test(raw)) return fallback;
   const episode = Number(raw);
-  return last !== null && episode > last ? 1 : episode;
+  return last !== null && episode > last ? fallback : episode;
 }
+
+/** An episode counts as watched after this long on the player (the embed can't report progress). */
+const WATCHED_AFTER_MS = 4 * 60_000;
 
 interface WatchProps {
   readonly anime: AnimeDetail;
@@ -76,13 +83,39 @@ function Watch({ anime, queued, onToggleQueue }: WatchProps) {
   const [params, setParams] = useSearchParams();
   const [showTrailer, setShowTrailer] = useState(false);
   const playerRef = useRef<HTMLDivElement>(null);
+  const progress = findProgress(useStore(progressStore), anime.id);
+  const prefs = useStore(prefsStore);
+  // Where this show was left off when the page opened; later progress shouldn't move the player.
+  const [resumed] = useState(() => findProgress(progressStore.get(), anime.id));
 
   // Ongoing shows (One Piece) have no episode total; bound playback by what has aired instead.
   const lastEpisode = anime.airedEpisodes ?? anime.episodes;
-  const episode = parseEpisode(params.get('ep'), lastEpisode);
-  const langParam = params.get('lang');
-  const currentLanguage = langParam && languages.includes(langParam) ? langParam : (languages[0] ?? 'sub');
+  const resumeAt = resumed ? Math.max(1, Math.min(resumeEpisode(resumed), lastEpisode || Infinity)) : 1;
+  const episode = parseEpisode(params.get('ep'), lastEpisode, resumeAt);
+  // A link's ?lang= wins, then this show's last language, then the viewer's usual one.
+  const currentLanguage =
+    [params.get('lang'), resumed?.language, prefs.language].find((lang) => lang && languages.includes(lang)) ??
+    languages[0] ??
+    'sub';
   const watchingEpisode = playable && !showTrailer;
+  const watched = new Set(progress?.watched);
+
+  const showInfo = { id: anime.id, title: anime.title, imageUrl: anime.imageUrl, total: lastEpisode || null };
+  const markWatched = (number: number, value: boolean) =>
+    progressStore.set((list) => setWatched(list, showInfo, number, value));
+
+  // Opening an episode puts the show at the front of "Continue watching"…
+  useEffect(() => {
+    if (!watchingEpisode) return;
+    const show = { id: anime.id, title: anime.title, imageUrl: anime.imageUrl, total: lastEpisode || null };
+    progressStore.set((list) => recordEpisode(list, show, episode, currentLanguage));
+    // …and staying on it for a few minutes marks it watched.
+    const timer = window.setTimeout(
+      () => progressStore.set((list) => setWatched(list, show, episode, true)),
+      WATCHED_AFTER_MS,
+    );
+    return () => window.clearTimeout(timer);
+  }, [watchingEpisode, anime.id, anime.title, anime.imageUrl, lastEpisode, episode, currentLanguage]);
 
   // replace: switching episodes shouldn't fill the back button with every episode watched.
   const updateParams = (changes: Record<string, string>) =>
@@ -94,7 +127,10 @@ function Watch({ anime, queued, onToggleQueue }: WatchProps) {
       },
       { replace: true },
     );
-  const setLanguage = (lang: string) => updateParams({ lang });
+  const setLanguage = (lang: string) => {
+    setPreferredLanguage(lang);
+    updateParams({ lang });
+  };
 
   const selectEpisode = (next: number) => {
     updateParams({ ep: String(next) });
@@ -137,7 +173,11 @@ function Watch({ anime, queued, onToggleQueue }: WatchProps) {
                 className={styles.control}
                 aria-label="Next episode"
                 disabled={!watchingEpisode || (lastEpisode !== null && episode >= lastEpisode)}
-                onClick={() => selectEpisode(episode + 1)}
+                onClick={() => {
+                  // Moving on means the current one is done.
+                  markWatched(episode, true);
+                  selectEpisode(episode + 1);
+                }}
               >
                 Next ›
               </button>
@@ -172,12 +212,21 @@ function Watch({ anime, queued, onToggleQueue }: WatchProps) {
           </div>
         )}
 
-        <Details anime={anime} queued={queued} onToggleQueue={onToggleQueue} playable={playable} />
+        <Details
+          anime={anime}
+          queued={queued}
+          onToggleQueue={onToggleQueue}
+          playable={playable}
+          shareUrl={animePath(anime.id, watchingEpisode ? { episode, language: currentLanguage } : {})}
+          shareTitle={watchingEpisode ? `${anime.title} · Episode ${episode}` : anime.title}
+        />
       </section>
       <EpisodeList
         animeId={anime.id}
         airedEpisodes={anime.airedEpisodes}
         airing={anime.airing}
+        watched={watched}
+        onToggleWatched={markWatched}
         {...(playable && { current: watchingEpisode ? episode : null, onSelect: selectEpisode })}
       />
     </div>
@@ -189,9 +238,12 @@ interface DetailsProps {
   readonly queued: boolean;
   readonly onToggleQueue: (anime: AnimeRef) => void;
   readonly playable: boolean;
+  /** Path of this page as it should be shared (keeps the episode and language). */
+  readonly shareUrl: string;
+  readonly shareTitle: string;
 }
 
-function Details({ anime, queued, onToggleQueue, playable }: DetailsProps) {
+function Details({ anime, queued, onToggleQueue, playable, shareUrl, shareTitle }: DetailsProps) {
   const score = formatScore(anime.score);
   const eyebrow = [anime.titleJapanese, anime.type, anime.season && anime.year && `${anime.season} ${anime.year}`]
     .filter(Boolean)
@@ -236,9 +288,7 @@ function Details({ anime, queued, onToggleQueue, playable }: DetailsProps) {
           <PillButton variant={queued ? 'outline' : 'primary'} aria-pressed={queued} onClick={() => onToggleQueue(anime)}>
             {queued ? 'In your queue' : 'Add to queue'}
           </PillButton>
-          <a className={styles.external} href={anime.sourceUrl} target="_blank" rel="noopener noreferrer">
-            AniList<span className="sr-only"> (opens in a new tab)</span> ↗
-          </a>
+          <ShareButton path={shareUrl} title={shareTitle} />
         </div>
       </div>
 
@@ -260,10 +310,53 @@ function Details({ anime, queued, onToggleQueue, playable }: DetailsProps) {
       )}
 
       <p className={styles.note}>
-        {playable ? 'Episodes play from the configured provider; trailers from YouTube.' : 'Trailers play from YouTube.'}{' '}
-        Details from AniList.
+        {playable ? 'Episodes play from the configured provider; trailers from YouTube.' : 'Trailers play from YouTube.'}
         {anime.rating && ` Rated ${anime.rating}.`}
       </p>
+    </>
+  );
+}
+
+/**
+ * Shares the page with the system share sheet where there is one (phones), else copies the link.
+ * Link previews show the episode, so the shared URL keeps ?ep= and ?lang=.
+ */
+function ShareButton({ path, title }: { readonly path: string; readonly title: string }) {
+  const [status, setStatus] = useState<'idle' | 'copied' | 'failed'>('idle');
+
+  useEffect(() => {
+    if (status === 'idle') return;
+    const timer = window.setTimeout(() => setStatus('idle'), 2500);
+    return () => window.clearTimeout(timer);
+  }, [status]);
+
+  const share = async () => {
+    const url = new URL(path, window.location.origin).toString();
+    if (typeof navigator.share === 'function') {
+      try {
+        await navigator.share({ title: `${title} · Nixhin`, url });
+        return;
+      } catch (error) {
+        // The viewer closed the share sheet: nothing to do.
+        if (error instanceof DOMException && error.name === 'AbortError') return;
+      }
+    }
+    try {
+      await navigator.clipboard.writeText(url);
+      setStatus('copied');
+    } catch {
+      setStatus('failed');
+    }
+  };
+
+  return (
+    <>
+      <PillButton variant="outline" onClick={() => void share()}>
+        Share
+      </PillButton>
+      <span role="status" className={styles.shareStatus}>
+        {status === 'copied' ? 'Link copied' : status === 'failed' ? 'Couldn’t copy the link' : ''}
+      </span>
     </>
   );
 }

@@ -26,7 +26,6 @@ const anime: AnimeDetail = {
   rank: null,
   studios: [],
   trailer: null,
-  sourceUrl: 'https://anilist.co/anime/108632',
   malId: null,
   airedEpisodes: 12,
 };

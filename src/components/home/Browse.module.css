@@ -34,3 +34,101 @@
   border-color: var(--color-ink);
   color: var(--color-on-dark);
 }
+
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 0.7em 0.8em;
+  margin: -0.4em 0 1.6em;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3em;
+  flex: 1 1 8.5em;
+  max-width: 12em;
+}
+
+.fieldLabel {
+  color: var(--color-muted);
+  font-size: 0.72em;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.select {
+  min-height: var(--tap-size);
+  padding: 0 0.9em;
+  border: 1px solid var(--color-chip-line);
+  border-radius: 0.7em;
+  background: var(--color-surface);
+  color: var(--color-ink);
+  /* iOS Safari zooms the page when focusing a control under 16px. */
+  font-size: max(16px, 0.9em);
+}
+
+.select[data-active] {
+  border-color: var(--color-ink);
+}
+
+.reset {
+  min-height: var(--tap-size);
+  padding: 0 0.4em;
+  border: 0;
+  background: transparent;
+  color: var(--color-ink);
+  font-size: 0.9em;
+  font-weight: 500;
+  text-decoration: underline;
+  text-decoration-color: var(--color-line-strong);
+  text-underline-offset: 0.3em;
+}
+
+.empty {
+  color: var(--color-muted);
+}
+
+.surprise {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.3em;
+}
+
+.surpriseButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45em;
+  min-height: var(--tap-size);
+  padding: 0 1.2em;
+  border: 1px solid var(--color-ink);
+  border-radius: var(--radius-pill);
+  background: transparent;
+  color: var(--color-ink);
+  font-size: 0.9em;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+@media (hover: hover) {
+  .surpriseButton:hover:not(:disabled) {
+    background: var(--color-ink);
+    color: var(--color-on-dark);
+  }
+}
+
+.surpriseButton:disabled {
+  cursor: progress;
+  color: var(--color-muted);
+}
+
+.surpriseStatus {
+  color: var(--color-muted);
+  font-size: 0.8em;
+}
+
+.surpriseStatus:empty {
+  display: none;
+}

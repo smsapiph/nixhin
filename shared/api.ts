@@ -18,6 +18,18 @@ export type ScheduleDay = (typeof SCHEDULE_DAYS)[number];
 export const TOP_FILTERS = ['airing', 'upcoming', 'bypopularity', 'favorite'] as const;
 export type TopFilter = (typeof TOP_FILTERS)[number];
 
+/** Search / browse filters (`/api/anime/search`). */
+export const SEARCH_SEASONS = ['winter', 'spring', 'summer', 'fall'] as const;
+export type SearchSeason = (typeof SEARCH_SEASONS)[number];
+export const SEARCH_FORMATS = ['tv', 'tv_short', 'movie', 'ova', 'ona', 'special'] as const;
+export type SearchFormat = (typeof SEARCH_FORMATS)[number];
+export const SEARCH_STATUSES = ['airing', 'finished', 'upcoming'] as const;
+export type SearchStatus = (typeof SEARCH_STATUSES)[number];
+export const SEARCH_SORTS = ['popularity', 'score', 'trending', 'newest', 'title'] as const;
+export type SearchSort = (typeof SEARCH_SORTS)[number];
+/** Earliest year offered by the year filter. */
+export const SEARCH_MIN_YEAR = 1940;
+
 export interface Broadcast {
   /** Broadcast weekday in `timezone`, e.g. "saturday". */
   readonly day: ScheduleDay;
@@ -68,8 +80,6 @@ export interface AnimeDetail extends AnimeSummary {
   readonly rank: number | null;
   readonly studios: readonly string[];
   readonly trailer: Trailer | null;
-  /** The title's page on the data source (AniList), for attribution. */
-  readonly sourceUrl: string;
   /** MyAnimeList id, when AniList knows it (some providers key on it). */
   readonly malId: number | null;
   /**

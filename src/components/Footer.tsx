@@ -15,13 +15,6 @@ export function Footer() {
           <p className={styles.blurb}>
             Anime, free and quiet. No account needed — your queue stays on this device.
           </p>
-          <p className={styles.blurb}>
-            Anime data from{' '}
-            <a href="https://anilist.co" target="_blank" rel="noopener noreferrer">
-              AniList
-            </a>
-            . Nixhin is not affiliated with AniList.
-          </p>
         </div>
         <nav aria-label="Footer" className={styles.links}>
           {FOOTER_LINKS.map((label) => (

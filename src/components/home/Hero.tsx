@@ -87,7 +87,7 @@ function HeroCarousel({ featured, showRemoteHint, isQueued, onToggleQueue, onOpe
 
         <span className={styles.note}>
           <AccentDot />
-          {score ? `Rated ${score}/10 on AniList` : 'Data from AniList'}
+          {score ? `Rated ${score}/10 by fans` : 'Trending this week'}
         </span>
 
         <div role="group" aria-label="Featured shows" className={styles.dots}>

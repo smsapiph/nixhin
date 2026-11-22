@@ -195,3 +195,42 @@
   -webkit-appearance: none;
   margin: 0;
 }
+
+/* Episode row + its watched toggle side by side. */
+.row {
+  display: flex;
+  align-items: stretch;
+}
+
+.row > .episode {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.watchedToggle {
+  flex: 0 0 auto;
+  width: var(--tap-size);
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-bottom: 1px solid var(--color-line-faint);
+  border-radius: 0;
+  background: transparent;
+  color: var(--color-line-strong);
+  font-size: 1em;
+  font-weight: 700;
+}
+
+@media (hover: hover) {
+  .watchedToggle:hover {
+    color: var(--color-ink-soft);
+  }
+}
+
+.watchedToggle[aria-pressed='true'] {
+  color: var(--color-accent);
+}
+
+.watched .name {
+  color: var(--color-muted);
+}

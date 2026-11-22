@@ -173,7 +173,6 @@ export function toAnimeDetail(media: RawMediaDetail): AnimeDetail {
     studios: (media.studios?.nodes ?? []).map((studio) => studio.name),
     trailer: youtubeId ? { youtubeId } : null,
     // Built from the id rather than trusting an upstream URL.
-    sourceUrl: `https://anilist.co/anime/${media.id}`,
     malId: media.idMal ?? null,
     airedEpisodes: airedEpisodeCount(media),
   };

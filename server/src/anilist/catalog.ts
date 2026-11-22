@@ -6,6 +6,9 @@ import type {
   Episode,
   Genre,
   Page,
+  SearchFormat,
+  SearchSort,
+  SearchStatus,
   SeasonEntry,
   TopFilter,
 } from '../../../shared/api.js';
@@ -90,6 +93,29 @@ const TOP_OPTIONS: Readonly<Record<TopFilter, Variables>> = {
   favorite: { status: null, sort: ['FAVOURITES_DESC'] },
 };
 
+const SEARCH_SORT: Readonly<Record<SearchSort, readonly string[]>> = {
+  popularity: ['POPULARITY_DESC'],
+  score: ['SCORE_DESC', 'POPULARITY_DESC'],
+  trending: ['TRENDING_DESC', 'POPULARITY_DESC'],
+  newest: ['START_DATE_DESC', 'POPULARITY_DESC'],
+  title: ['TITLE_ROMAJI'],
+};
+
+const SEARCH_FORMAT: Readonly<Record<SearchFormat, string>> = {
+  tv: 'TV',
+  tv_short: 'TV_SHORT',
+  movie: 'MOVIE',
+  ova: 'OVA',
+  ona: 'ONA',
+  special: 'SPECIAL',
+};
+
+const SEARCH_STATUS: Readonly<Record<SearchStatus, string>> = {
+  airing: 'RELEASING',
+  finished: 'FINISHED',
+  upcoming: 'NOT_YET_RELEASED',
+};
+
 type Season = 'WINTER' | 'SPRING' | 'SUMMER' | 'FALL';
 
 /** AniList seasons: December belongs to the following year's WINTER. */
@@ -139,7 +165,7 @@ export class AniListCatalog implements AnimeCatalog {
     return this.mediaPage(data, page);
   }
 
-  async search({ query, genre, page, limit }: SearchParams): Promise<Page<AnimeSummary>> {
+  async search({ query, genre, year, season, format, status, sort, page, limit }: SearchParams): Promise<Page<AnimeSummary>> {
     if (genre !== undefined) {
       const known = await this.genres();
       if (!known.some((g) => g.name === genre)) throw new UpstreamError('bad_request', `Unknown genre: ${genre}`);
@@ -152,7 +178,12 @@ export class AniListCatalog implements AnimeCatalog {
         perPage: limit,
         search: query ?? null,
         genre: genre ?? null,
-        sort: query ? ['SEARCH_MATCH', 'POPULARITY_DESC'] : ['POPULARITY_DESC'],
+        // Left out (not null) when unset: AniList treats an explicit null as "has no season/format".
+        seasonYear: year,
+        season: season?.toUpperCase(),
+        format: format && SEARCH_FORMAT[format],
+        status: status && SEARCH_STATUS[status],
+        sort: sort ? SEARCH_SORT[sort] : query ? ['SEARCH_MATCH', 'POPULARITY_DESC'] : ['POPULARITY_DESC'],
       },
       TTL.lists,
     );
