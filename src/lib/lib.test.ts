@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { toLocalSlot, weekdayIndex } from './broadcast';
 import { formatEpisodes, formatScore, genreLine } from './format';
+import { isDevtoolsShortcut, looksLikeDevtoolsOpen } from './devtools';
 import { parseQueue } from './queueStorage';
 
 const NOW = new Date('2026-11-20T12:00:00Z'); // a Friday
@@ -64,5 +65,42 @@ describe('format', () => {
     expect(formatScore(null)).toBeNull();
     expect(formatEpisodes(1)).toBe('1 episode');
     expect(formatEpisodes(null)).toBe('Ongoing');
+  });
+});
+
+describe('isDevtoolsShortcut', () => {
+  const key = (code: string, mods: Partial<Record<'ctrlKey' | 'metaKey' | 'shiftKey' | 'altKey', boolean>> = {}) => ({
+    key: code.replace('Key', ''),
+    code,
+    ctrlKey: false,
+    metaKey: false,
+    shiftKey: false,
+    altKey: false,
+    ...mods,
+  });
+
+  it('blocks F12, Ctrl+Shift+I/J/C, Cmd+Option+I and view-source', () => {
+    expect(isDevtoolsShortcut(key('F12'))).toBe(true);
+    expect(isDevtoolsShortcut(key('KeyI', { ctrlKey: true, shiftKey: true }))).toBe(true);
+    expect(isDevtoolsShortcut(key('KeyJ', { ctrlKey: true, shiftKey: true }))).toBe(true);
+    expect(isDevtoolsShortcut(key('KeyC', { ctrlKey: true, shiftKey: true }))).toBe(true);
+    expect(isDevtoolsShortcut(key('KeyI', { metaKey: true, altKey: true }))).toBe(true);
+    expect(isDevtoolsShortcut(key('KeyU', { ctrlKey: true }))).toBe(true);
+  });
+
+  it('leaves ordinary shortcuts alone', () => {
+    expect(isDevtoolsShortcut(key('KeyC', { ctrlKey: true }))).toBe(false); // copy
+    expect(isDevtoolsShortcut(key('KeyI', { ctrlKey: true }))).toBe(false); // italic
+    expect(isDevtoolsShortcut(key('KeyU', { ctrlKey: true, shiftKey: true }))).toBe(false);
+    expect(isDevtoolsShortcut(key('KeyJ'))).toBe(false);
+  });
+});
+
+describe('looksLikeDevtoolsOpen', () => {
+  it('detects a docked panel and ignores normal browser chrome', () => {
+    expect(looksLikeDevtoolsOpen({ outerWidth: 1440, outerHeight: 900, innerWidth: 1440, innerHeight: 800 })).toBe(false);
+    expect(looksLikeDevtoolsOpen({ outerWidth: 1440, outerHeight: 900, innerWidth: 900, innerHeight: 800 })).toBe(true);
+    expect(looksLikeDevtoolsOpen({ outerWidth: 1440, outerHeight: 900, innerWidth: 1440, innerHeight: 450 })).toBe(true);
+    expect(looksLikeDevtoolsOpen({ outerWidth: 0, outerHeight: 0, innerWidth: 1440, innerHeight: 800 })).toBe(false);
   });
 });
