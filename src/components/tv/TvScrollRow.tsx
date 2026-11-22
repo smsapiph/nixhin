@@ -16,8 +16,8 @@ const sameState = (a: RowState, b: RowState) =>
   a.active === b.active && a.left === b.left && a.right === b.right && a.index === b.index && a.count === b.count;
 
 /**
- * TV version of a horizontal card row: the same row, plus ‹ › markers in the page gutter while the
- * remote is on it (only on sides with more cards) and a "3 / 20" position under the right marker.
+ * TV version of a horizontal card row: the same row, plus ‹ › buttons in the page gutter on sides with
+ * more cards (clickable with a TV browser's pointer) and, while the D-pad is on the row, a "3 / 20" position.
  */
 export function TvScrollRow({ className, children, ...props }: ComponentPropsWithoutRef<'div'>) {
   const rowRef = useRef<HTMLDivElement>(null);
@@ -62,17 +62,40 @@ export function TvScrollRow({ className, children, ...props }: ComponentPropsWit
 
   const on = (visible: boolean) => (state.active && visible ? styles.on : '');
 
+  /** Scrolls most of a screen's width; the pointer of a TV remote can't swipe or use a scroll wheel. */
+  const scrollBy = (direction: 1 | -1) => {
+    const row = rowRef.current;
+    if (!row) return;
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    row.scrollBy({ left: direction * row.clientWidth * 0.8, behavior: reduced ? 'instant' : 'smooth' });
+  };
+
   return (
-    <div className={styles.wrap}>
+    <div className={`${styles.wrap} ${state.active ? styles.active : ''}`}>
       <div ref={rowRef} className={`${className ?? ''} ${styles.row}`} {...{ [ROW_ATTRIBUTE]: '' }} {...props}>
         {children}
       </div>
-      <span aria-hidden="true" className={`${styles.edge} ${styles.left} ${on(state.left)}`}>
-        ‹
-      </span>
-      <span aria-hidden="true" className={`${styles.edge} ${styles.right} ${on(state.right)}`}>
-        ›
-      </span>
+      {/* Pointer buttons: skipped by the D-pad (which scrolls the row by moving between cards). */}
+      <button
+        type="button"
+        tabIndex={-1}
+        data-tv-skip=""
+        aria-label="Scroll left"
+        className={`${styles.edge} ${styles.left} ${state.left ? styles.shown : ''}`}
+        onClick={() => scrollBy(-1)}
+      >
+        <span aria-hidden="true">‹</span>
+      </button>
+      <button
+        type="button"
+        tabIndex={-1}
+        data-tv-skip=""
+        aria-label="Scroll right"
+        className={`${styles.edge} ${styles.right} ${state.right ? styles.shown : ''}`}
+        onClick={() => scrollBy(1)}
+      >
+        <span aria-hidden="true">›</span>
+      </button>
       <span aria-hidden="true" className={`${styles.count} ${on(state.index > 0 && state.count > 1)}`}>
         {state.index} / {state.count}
       </span>

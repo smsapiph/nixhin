@@ -93,7 +93,8 @@ const FOCUSABLE = [
 export const ROW_ATTRIBUTE = 'data-tv-row';
 
 function isUsable(el: HTMLElement): boolean {
-  if (el.closest('[inert], [aria-hidden="true"]')) return false;
+  // Pointer-only controls (e.g. the row scroll buttons) are not D-pad stops.
+  if (el.closest('[inert], [aria-hidden="true"], [data-tv-skip]')) return false;
   const rect = el.getBoundingClientRect();
   if (rect.width < 2 || rect.height < 2) return false;
   const style = getComputedStyle(el);
