@@ -1,11 +1,13 @@
 import { Resvg } from '@resvg/resvg-js';
+import jpeg from 'jpeg-js';
 import satori from 'satori';
 import type { AnimeDetail } from '../../../shared/api.js';
 import type { AnimeLink } from './pageMeta.js';
 
 /**
  * Branded 1200×630 share card for an anime link: banner background, poster, title and
- * episode badge. Rendered with satori (layout → SVG) and resvg (SVG → PNG).
+ * episode badge. Rendered with satori (layout → SVG) and resvg (SVG → pixels), then encoded as JPEG:
+ * a PNG of a photo-like banner is ~800 KB, too heavy for Messenger/WhatsApp previews.
  */
 
 export const CARD_WIDTH = 1200;
@@ -74,7 +76,8 @@ export function cardContent(anime: AnimeDetail, link: AnimeLink): CardContent {
   ].filter((d): d is string => d !== null);
   return {
     title: anime.title,
-    native: anime.titleJapanese,
+    // Skip the native title when it only repeats the main one (e.g. "ONE PIECE").
+    native: anime.titleJapanese && anime.titleJapanese.toLowerCase() !== anime.title.toLowerCase() ? anime.titleJapanese : null,
     badge: episode !== null ? `EPISODE ${episode}` : 'WATCH NOW',
     language: episode !== null ? languageBadge(link.language) : null,
     details,
@@ -161,6 +164,8 @@ export function cardTree(content: CardContent, images: CardImages): Node {
   );
 }
 
+const JPEG_QUALITY = 82;
+
 export async function renderCard(content: CardContent, images: CardImages, fonts: CardFonts): Promise<Uint8Array> {
   // Satori takes React-element-shaped objects; ours match that shape without depending on React.
   const svg = await satori(cardTree(content, images) as unknown as Parameters<typeof satori>[0], {
@@ -171,5 +176,6 @@ export async function renderCard(content: CardContent, images: CardImages, fonts
       { name: 'Sans', data: fonts.sans, weight: 500, style: 'normal' },
     ],
   });
-  return new Resvg(svg, { fitTo: { mode: 'width', value: CARD_WIDTH } }).render().asPng();
+  const image = new Resvg(svg, { fitTo: { mode: 'width', value: CARD_WIDTH }, background: C.ink }).render();
+  return jpeg.encode({ data: image.pixels, width: image.width, height: image.height }, JPEG_QUALITY).data;
 }

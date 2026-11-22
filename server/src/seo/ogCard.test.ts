@@ -1,4 +1,5 @@
 import { readFileSync } from 'node:fs';
+import jpeg from 'jpeg-js';
 import { describe, expect, it } from 'vitest';
 import type { AnimeDetail } from '../../../shared/api.js';
 import { cardContent, renderCard } from './ogCard.js';
@@ -31,6 +32,11 @@ describe('cardContent', () => {
     expect(cardContent(anime, { id: 97940, episode: 999, language: 'sub' })).toMatchObject({ badge: 'WATCH NOW', language: null });
   });
 
+  it('hides a native title that repeats the main one', () => {
+    const onePiece = { ...anime, title: 'ONE PIECE', titleJapanese: 'ONE PIECE' } as unknown as AnimeDetail;
+    expect(cardContent(onePiece, { id: 21, episode: null, language: null }).native).toBeNull();
+  });
+
   it('uses the first genre when the episode count is unknown', () => {
     const ongoing = { ...anime, episodes: null, airedEpisodes: null, score: null } as unknown as AnimeDetail;
     expect(cardContent(ongoing, { id: 1, episode: 1200, language: null }).details).toEqual(['TV', '2017', 'Action']);
@@ -38,12 +44,12 @@ describe('cardContent', () => {
 });
 
 describe('renderCard', () => {
-  it('renders a 1200×630 PNG, with or without images', { timeout: 20_000 }, async () => {
+  it('renders a 1200×630 JPEG, with or without images', { timeout: 20_000 }, async () => {
     const font = (name: string) => readFileSync(new URL(`../../../public/og-fonts/${name}`, import.meta.url)).buffer as ArrayBuffer;
     const fonts = { serif: font('shippori-mincho-700.ttf'), sans: font('zen-kaku-gothic-new-500.ttf') };
-    const png = await renderCard(cardContent(anime, { id: 97940, episode: 5, language: 'sub' }), { banner: null, poster: null }, fonts);
-    expect(Buffer.from(png.subarray(1, 4)).toString()).toBe('PNG');
-    const view = new DataView(png.buffer, png.byteOffset);
-    expect([view.getUint32(16), view.getUint32(20)]).toEqual([1200, 630]);
+    const card = await renderCard(cardContent(anime, { id: 97940, episode: 5, language: 'sub' }), { banner: null, poster: null }, fonts);
+    const decoded = jpeg.decode(card);
+    expect([decoded.width, decoded.height]).toEqual([1200, 630]);
+    expect(card.length).toBeLessThan(300_000);
   });
 });

@@ -145,9 +145,9 @@ and rate-limits on Netlify's `context.ip`.
   (e.g. *Watch Black Clover Episode 5 (English dub) · Nixhin*); see `server/src/seo/pageMeta.ts`. Browsers get
   `index.html` unchanged, so normal visits cost no extra AniList call. If AniList is slow (>4 s) or the id is
   unknown, the site-wide preview is used.
-- `og:image` points at a branded share card, `/og/anime/:id.png?ep=&lang=`, rendered by a third function
+- `og:image` points at a branded share card, `/og/anime/:id.jpg?ep=&lang=`, rendered by a third function
   (`server/netlify/functions/og.ts`, layout in `server/src/seo/ogCard.ts`): banner background, poster, title and
-  an episode badge. It uses satori + resvg and the fonts in `public/og-fonts/` (SIL Open Font License). Netlify's
+  an episode badge. It uses satori + resvg, is encoded as JPEG (~100–150 KB; Messenger and WhatsApp skip heavy images), and uses the fonts in `public/og-fonts/` (SIL Open Font License). Netlify's
   CDN keeps each card for a week; unknown ids redirect to `/og-image.png`. An episode badge only appears for
   episodes that have aired.
 - Facebook/Messenger cache previews; use the [Sharing Debugger](https://developers.facebook.com/tools/debug/)

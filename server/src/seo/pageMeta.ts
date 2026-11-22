@@ -42,9 +42,9 @@ export function parseAnimeLink(url: URL): AnimeLink | null {
   return parseLink(url, /^\/anime\/(\d{1,9})\/?$/);
 }
 
-/** Parses the share-card URL `/og/anime/:id.png?ep=&lang=`. */
+/** Parses the share-card URL `/og/anime/:id.jpg?ep=&lang=`. */
 export function parseCardLink(url: URL): AnimeLink | null {
-  return parseLink(url, /^\/og\/anime\/(\d{1,9})\.png$/);
+  return parseLink(url, /^\/og\/anime\/(\d{1,9})\.jpg$/);
 }
 
 function linkQuery(link: AnimeLink): string {
@@ -58,7 +58,7 @@ function linkQuery(link: AnimeLink): string {
 /** Path of the branded share card (rendered by server/netlify/functions/og.ts). */
 export function cardPath(link: AnimeLink): string {
   // Language only matters next to an episode badge; dropping it otherwise avoids duplicate renders.
-  return `/og/anime/${link.id}.png${linkQuery(link.episode === null ? { ...link, language: null } : link)}`;
+  return `/og/anime/${link.id}.jpg${linkQuery(link.episode === null ? { ...link, language: null } : link)}`;
 }
 
 export interface PageMeta {
@@ -134,7 +134,7 @@ export function renderMetaTags(meta: PageMeta): string {
     `<meta property="og:description" content="${a(meta.description)}" />`,
     `<meta property="og:url" content="${a(meta.url)}" />`,
     `<meta property="og:image" content="${a(meta.image)}" />`,
-    `<meta property="og:image:type" content="image/png" />`,
+    `<meta property="og:image:type" content="image/jpeg" />`,
     `<meta property="og:image:width" content="1200" />`,
     `<meta property="og:image:height" content="630" />`,
     `<meta property="og:image:alt" content="${a(meta.imageAlt)}" />`,
