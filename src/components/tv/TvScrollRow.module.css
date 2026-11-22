@@ -1,0 +1,55 @@
+/* The markers sit in the page's side gutter, so the row itself looks exactly as on other screens. */
+.wrap {
+  position: relative;
+}
+
+/* The remote scrolls rows card by card; snapping would fight the look-ahead. */
+.wrap > .row {
+  scroll-snap-type: none;
+}
+
+.edge,
+.count {
+  position: absolute;
+  opacity: 0;
+  transition: opacity 0.2s;
+  pointer-events: none;
+}
+
+.edge {
+  top: 38%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.9em;
+  height: 1.9em;
+  margin-top: -0.95em;
+  border-radius: 50%;
+  background: rgb(28 27 34 / 0.82);
+  color: var(--color-on-dark);
+  font-size: 1.1em;
+  line-height: 1;
+}
+
+.left {
+  left: -2.6em;
+}
+
+.right {
+  right: -2.6em;
+}
+
+.count {
+  top: calc(38% + 1.6em);
+  right: -2.75em;
+  width: 2.5em;
+  text-align: center;
+  color: var(--color-muted);
+  font-size: 0.75em;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.on {
+  opacity: 1;
+}

@@ -11,6 +11,8 @@ import { EpisodePlayer } from '../components/watch/EpisodePlayer';
 import { useDocumentTitle } from '../hooks/useDocumentTitle';
 import { useStore } from '../hooks/useStore';
 import { prefsStore, setPreferredLanguage } from '../lib/prefs';
+import { isTv } from '../lib/tvDevice';
+import { episodeControlKey, requestPlayerControl } from '../lib/tvPlayer';
 import { findProgress, progressStore, recordEpisode, resumeEpisode, setWatched } from '../lib/progress';
 import { animePath } from '../routes';
 import { TrailerPlayer } from '../components/watch/TrailerPlayer';
@@ -142,6 +144,12 @@ function Watch({ anime, queued, onToggleQueue }: WatchProps) {
     }
   };
 
+  // Choosing from the episode list on a TV hands the remote straight to the video.
+  const pickEpisode = (next: number) => {
+    selectEpisode(next);
+    if (isTv) requestPlayerControl(episodeControlKey(next, currentLanguage));
+  };
+
   return (
     <div className={styles.layout}>
       <section aria-labelledby="anime-title" className={styles.main}>
@@ -227,7 +235,7 @@ function Watch({ anime, queued, onToggleQueue }: WatchProps) {
         airing={anime.airing}
         watched={watched}
         onToggleWatched={markWatched}
-        {...(playable && { current: watchingEpisode ? episode : null, onSelect: selectEpisode })}
+        {...(playable && { current: watchingEpisode ? episode : null, onSelect: pickEpisode })}
       />
     </div>
   );

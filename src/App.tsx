@@ -3,10 +3,12 @@ import { Navigate, Route, Routes, useLocation, useNavigate, useNavigationType, u
 import { Footer } from './components/Footer';
 import { Header } from './components/Header';
 import { TabBar } from './components/TabBar';
+import { TvRemote } from './components/tv/TvRemote';
 import { tabForSection, useActiveSection } from './hooks/useActiveSection';
 import { useLayout } from './hooks/useLayout';
 import { useQueue } from './hooks/useQueue';
 import { addSearch, searchHistoryStore } from './lib/searchHistory';
+import { isTv } from './lib/tvDevice';
 import { AnimePage } from './pages/AnimePage';
 import { HomePage } from './pages/HomePage';
 import { NotFoundPage } from './pages/NotFoundPage';
@@ -117,7 +119,6 @@ export function App() {
             path="/"
             element={
               <HomePage
-                layout={layout}
                 queue={queue.items}
                 isQueued={queue.isQueued}
                 onToggleQueue={queue.toggle}
@@ -139,6 +140,7 @@ export function App() {
 
       <Footer />
 
+      {isTv && <TvRemote isHome={isHome} onBack={goBack} />}
       {layout === 'phone' && <TabBar active={tabForSection(activeSection)} onNavigate={navigate} />}
     </div>
   );

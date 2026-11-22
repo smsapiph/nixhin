@@ -108,6 +108,19 @@ STREAM_LANGUAGES=sub,dub
 | `/search?q=` | Search results |
 | anything else | 404 page |
 
+## TV remote navigation
+
+On TV browsers (Samsung Tizen, LG webOS, Android/Google TV, Fire TV; detected from the user agent in
+`src/lib/tvDevice.ts`, not from screen width) the whole UI works with a remote's D-pad. Phones, tablets and
+monitors are unchanged. Add `?tv=1` to any URL to try it in a desktop browser (`?tv=0` turns it off again).
+
+- ◀ ▶ ▲ ▼ move focus to the nearest control in that direction (`src/lib/spatialNav.ts`); card rows and the
+  episode list scroll along, and rows remember the last card used. OK is the browser's own Enter.
+- Back returns to the previous page; on the home page it jumps to the top menu.
+- On the watch page, OK on the video (or choosing an episode from the list) hands the remote to the embedded
+  player, so its arrows seek/change volume. Back returns to the page (`src/lib/tvPlayer.ts`): the page can't
+  read keys inside the provider's iframe, so it pushes a history entry that the TV's Back button pops.
+
 ## Data kept on the device (no database)
 
 Everything personal lives in the viewer's browser (`localStorage`, `src/lib/store.ts`), synced across tabs:
@@ -118,6 +131,7 @@ Everything personal lives in the viewer's browser (`localStorage`, `src/lib/stor
 | `nixhin-progress-v1` | Continue watching: last episode + language per show, watched episodes |
 | `nixhin-searches-v1` | Last 10 searches (shown under the search box) |
 | `nixhin-prefs-v1` | Preferred audio language (sub/dub) |
+| `nixhin-tv-v1` | TV mode forced on/off with `?tv=1` / `?tv=0` |
 
 An episode is marked watched after 4 minutes on the player, when the viewer presses Next, or by hand in the
 episode list. **Export / Import backup** (under My queue) downloads all of it as one JSON file and merges it back

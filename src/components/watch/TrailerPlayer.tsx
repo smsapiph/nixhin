@@ -1,6 +1,8 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import type { AnimeDetail } from '../../../shared/api';
+import { isTv } from '../../lib/tvDevice';
 import { Icon } from '../Icon';
+import { TvFrameFocus } from './TvFrameFocus';
 import styles from './TrailerPlayer.module.css';
 
 /** Strict check before building an embed URL, even though the API already validates it. */
@@ -12,6 +14,7 @@ const YOUTUBE_ID = /^[A-Za-z0-9_-]{11}$/;
  */
 export function TrailerPlayer({ anime }: { readonly anime: AnimeDetail }) {
   const [playing, setPlaying] = useState(false);
+  const frameRef = useRef<HTMLIFrameElement>(null);
   const youtubeId = anime.trailer && YOUTUBE_ID.test(anime.trailer.youtubeId) ? anime.trailer.youtubeId : null;
   // The trailer's own 16:9 thumbnail fits the player best; otherwise fall back to the show's artwork.
   const thumbnail = youtubeId ? `https://i.ytimg.com/vi/${youtubeId}/hqdefault.jpg` : null;
@@ -22,6 +25,7 @@ export function TrailerPlayer({ anime }: { readonly anime: AnimeDetail }) {
     return (
       <div className={styles.player}>
         <iframe
+          ref={frameRef}
           className={styles.iframe}
           src={`https://www.youtube-nocookie.com/embed/${youtubeId}?autoplay=1&playsinline=1&rel=0`}
           title={`${anime.title} — trailer`}
@@ -30,6 +34,8 @@ export function TrailerPlayer({ anime }: { readonly anime: AnimeDetail }) {
           referrerPolicy="strict-origin-when-cross-origin"
           sandbox="allow-scripts allow-same-origin allow-presentation allow-popups"
         />
+        {/* "Play trailer" was just pressed and is gone: keep the remote on the video. */}
+        {isTv && <TvFrameFocus frameRef={frameRef} autoFocus />}
       </div>
     );
   }
