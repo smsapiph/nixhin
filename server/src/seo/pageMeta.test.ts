@@ -73,14 +73,14 @@ describe('animeMeta', () => {
     expect(meta.url).toBe(`${SITE}/anime/108632?ep=5&lang=dub`);
     expect(meta.image).toBe(`${SITE}/og/anime/108632.jpg?ep=5&lang=dub`);
     expect(meta.imageAlt).toBe('Watch Black Clover 2nd Season Episode 5 (English dub)');
-    expect(meta.type).toBe('video.episode');
+    expect(meta.type).toBe('website');
   });
 
   it('describes the show without an episode', () => {
     const meta = animeMeta(anime, { id: anime.id, episode: null, language: null }, SITE);
     expect(meta.title).toBe('Watch Black Clover 2nd Season · Nixhin');
     expect(meta.image).toBe(`${SITE}/og/anime/108632.jpg`);
-    expect(meta.type).toBe('video.tv_show');
+    expect(meta.type).toBe('website');
   });
 
   it('truncates long synopses', () => {
