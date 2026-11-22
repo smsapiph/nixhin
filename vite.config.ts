@@ -9,6 +9,12 @@ export default defineConfig({
   build: {
     // Transpile syntax for older iPhones/iPads still in use (iOS 15+), alongside evergreen browsers.
     target: ['es2020', 'ios15', 'safari15', 'chrome100', 'firefox100', 'edge100'],
+    rolldownOptions: {
+      output: {
+        // Keep the `debugger` statement the DevTools check relies on (src/hooks/useDevtoolsOpen.ts).
+        minify: { compress: { dropDebugger: false } },
+      },
+    },
   },
   css: {
     modules: {
