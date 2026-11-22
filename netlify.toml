@@ -27,8 +27,9 @@
 [[headers]]
   for = "/*"
   [headers.values]
-    # If you change STREAM_EMBED_TEMPLATE to another provider, update frame-src to its origin.
-    Content-Security-Policy = "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: https://s4.anilist.co https://img.anili.st https://i.ytimg.com https://img.youtube.com https://image.tmdb.org; frame-src https://www.youtube-nocookie.com https://megaplay.buzz; connect-src 'self'; base-uri 'self'; form-action 'self'; object-src 'none'; frame-ancestors 'none'"
+    # frame-src lists the player origins: YouTube (trailers), the anime provider (STREAM_EMBED_TEMPLATE) and the
+    # movie/TV provider (STREAM_MOVIE_TEMPLATE, STREAM_TV_TEMPLATE). Update it when a provider changes.
+    Content-Security-Policy = "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: https://s4.anilist.co https://img.anili.st https://i.ytimg.com https://img.youtube.com https://image.tmdb.org; frame-src https://www.youtube-nocookie.com https://megaplay.buzz https://vsembed.ru; connect-src 'self'; base-uri 'self'; form-action 'self'; object-src 'none'; frame-ancestors 'none'"
     X-Content-Type-Options = "nosniff"
     Referrer-Policy = "strict-origin-when-cross-origin"
     Permissions-Policy = "camera=(), microphone=(), geolocation=()"
