@@ -12,6 +12,10 @@
 [functions]
   directory = "server/netlify/functions"
   node_bundler = "esbuild"
+  # resvg (share-card PNG rendering, functions/og.ts) ships a native binary per platform;
+  # esbuild cannot bundle it, so it is copied from server/node_modules as-is.
+  external_node_modules = ["@resvg/resvg-js"]
+  included_files = ["server/node_modules/@resvg/**"]
 
 # SPA fallback: serve index.html for any path that is not a file. /api/* never reaches this,
 # because a function with a configured path runs before redirects.

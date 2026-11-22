@@ -141,10 +141,15 @@ and rate-limits on Netlify's `context.ip`.
 - The home page uses the static tags in `index.html` and `public/og-image.png`. Crawlers need absolute URLs, so
   `%SITE_URL%` is filled in at build time from Netlify's `URL` (or `SITE_URL` if you set it).
 - `/anime/*` is served by a second function (`server/netlify/functions/page.ts`). For link-preview bots and
-  search crawlers it replaces the `<!-- page-meta -->` block with the anime's title, episode, language and banner
+  search crawlers it replaces the `<!-- page-meta -->` block with the anime's title, episode and language
   (e.g. *Watch Black Clover Episode 5 (English dub) · Nixhin*); see `server/src/seo/pageMeta.ts`. Browsers get
   `index.html` unchanged, so normal visits cost no extra AniList call. If AniList is slow (>4 s) or the id is
   unknown, the site-wide preview is used.
+- `og:image` points at a branded share card, `/og/anime/:id.png?ep=&lang=`, rendered by a third function
+  (`server/netlify/functions/og.ts`, layout in `server/src/seo/ogCard.ts`): banner background, poster, title and
+  an episode badge. It uses satori + resvg and the fonts in `public/og-fonts/` (SIL Open Font License). Netlify's
+  CDN keeps each card for a week; unknown ids redirect to `/og-image.png`. An episode badge only appears for
+  episodes that have aired.
 - Facebook/Messenger cache previews; use the [Sharing Debugger](https://developers.facebook.com/tools/debug/)
   to refresh one after a change.
 

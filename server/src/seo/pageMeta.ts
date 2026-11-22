@@ -25,9 +25,8 @@ export interface AnimeLink {
   readonly language: string | null;
 }
 
-/** Parses `/anime/:id?ep=&lang=`; null if the path is not a valid anime page. */
-export function parseAnimeLink(url: URL): AnimeLink | null {
-  const match = /^\/anime\/(\d{1,9})\/?$/.exec(url.pathname);
+function parseLink(url: URL, pattern: RegExp): AnimeLink | null {
+  const match = pattern.exec(url.pathname);
   if (!match) return null;
   const id = Number(match[1]);
   if (id < 1) return null;
@@ -38,13 +37,36 @@ export function parseAnimeLink(url: URL): AnimeLink | null {
   return { id, episode, language };
 }
 
+/** Parses `/anime/:id?ep=&lang=`; null if the path is not a valid anime page. */
+export function parseAnimeLink(url: URL): AnimeLink | null {
+  return parseLink(url, /^\/anime\/(\d{1,9})\/?$/);
+}
+
+/** Parses the share-card URL `/og/anime/:id.png?ep=&lang=`. */
+export function parseCardLink(url: URL): AnimeLink | null {
+  return parseLink(url, /^\/og\/anime\/(\d{1,9})\.png$/);
+}
+
+function linkQuery(link: AnimeLink): string {
+  const params = new URLSearchParams();
+  if (link.episode !== null) params.set('ep', String(link.episode));
+  if (link.language !== null) params.set('lang', link.language);
+  const query = params.toString();
+  return query ? `?${query}` : '';
+}
+
+/** Path of the branded share card (rendered by server/netlify/functions/og.ts). */
+export function cardPath(link: AnimeLink): string {
+  // Language only matters next to an episode badge; dropping it otherwise avoids duplicate renders.
+  return `/og/anime/${link.id}.png${linkQuery(link.episode === null ? { ...link, language: null } : link)}`;
+}
+
 export interface PageMeta {
   readonly title: string;
   readonly description: string;
   readonly url: string;
   readonly image: string;
-  /** Wide images use the large card; portrait posters the small one. */
-  readonly imageIsWide: boolean;
+  readonly imageAlt: string;
   readonly type: string;
 }
 
@@ -65,11 +87,7 @@ function languageLabel(language: string | null): string | null {
 /** e.g. "Watch Black Clover Episode 5 (English dub) · Nixhin". */
 export function animeMeta(anime: AnimeDetail, link: AnimeLink, siteUrl: string): PageMeta {
   const lang = languageLabel(link.language);
-  const params = new URLSearchParams();
-  if (link.episode !== null) params.set('ep', String(link.episode));
-  if (link.language !== null) params.set('lang', link.language);
-  const query = params.toString();
-  const url = `${siteUrl}/anime/${anime.id}${query ? `?${query}` : ''}`;
+  const url = `${siteUrl}/anime/${anime.id}${linkQuery(link)}`;
 
   let title: string;
   let description: string;
@@ -84,14 +102,12 @@ export function animeMeta(anime: AnimeDetail, link: AnimeLink, siteUrl: string):
       : `Watch ${anime.title} free on ${SITE_NAME}. No account needed.`;
   }
 
-  const wide = anime.bannerUrl;
-  const poster = anime.imageUrlLarge ?? anime.imageUrl;
   return {
     title,
     description,
     url,
-    image: wide ?? poster ?? `${siteUrl}/og-image.png`,
-    imageIsWide: wide !== null || poster === null,
+    image: `${siteUrl}${cardPath({ ...link, id: anime.id })}`,
+    imageAlt: title.replace(` · ${SITE_NAME}`, ''),
     type: link.episode !== null ? 'video.episode' : 'video.tv_show',
   };
 }
@@ -118,10 +134,15 @@ export function renderMetaTags(meta: PageMeta): string {
     `<meta property="og:description" content="${a(meta.description)}" />`,
     `<meta property="og:url" content="${a(meta.url)}" />`,
     `<meta property="og:image" content="${a(meta.image)}" />`,
-    `<meta name="twitter:card" content="${meta.imageIsWide ? 'summary_large_image' : 'summary'}" />`,
+    `<meta property="og:image:type" content="image/png" />`,
+    `<meta property="og:image:width" content="1200" />`,
+    `<meta property="og:image:height" content="630" />`,
+    `<meta property="og:image:alt" content="${a(meta.imageAlt)}" />`,
+    `<meta name="twitter:card" content="summary_large_image" />`,
     `<meta name="twitter:title" content="${a(meta.title)}" />`,
     `<meta name="twitter:description" content="${a(meta.description)}" />`,
     `<meta name="twitter:image" content="${a(meta.image)}" />`,
+    `<meta name="twitter:image:alt" content="${a(meta.imageAlt)}" />`,
     META_END,
   ].join('\n    ');
 }
