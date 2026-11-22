@@ -1,5 +1,7 @@
 import type { AnimeDetail } from '../../../shared/api';
+import { decodeStreamToken } from '../../../shared/streamToken';
 import { useStream } from '../../api/queries';
+import { useDevtoolsOpen } from '../../hooks/useDevtoolsOpen';
 import { ErrorNotice, LoadingStatus } from '../feedback';
 import styles from './TrailerPlayer.module.css';
 
@@ -9,8 +11,13 @@ interface EpisodePlayerProps {
   readonly language: string;
 }
 
-/** Only https embeds are ever framed, even though the server builds them from a fixed template. */
-function safeEmbedUrl(url: string): string | null {
+/**
+ * Decodes the server's stream token. Only https embeds are ever framed, even though the
+ * server builds them from a fixed template.
+ */
+function safeEmbedUrl(token: string): string | null {
+  const url = decodeStreamToken(token);
+  if (url === null) return null;
   try {
     return new URL(url).protocol === 'https:' ? url : null;
   } catch {
@@ -21,12 +28,14 @@ function safeEmbedUrl(url: string): string | null {
 /**
  * Plays an episode through the server-configured provider's embed player.
  *
- * The frame is sandboxed without `allow-popups` or `allow-top-navigation`, so the embedded
- * page cannot open new windows or navigate Nixhin away (blocks pop-under/redirect behaviour).
+ * The frame is not sandboxed: the provider page runs with its normal permissions.
+ * The frame is removed while DevTools appears to be open.
  */
 export function EpisodePlayer({ anime, episode, language }: EpisodePlayerProps) {
   const { data, isPending, isError, error, refetch } = useStream(anime.id, episode, language, true);
-  const src = data ? safeEmbedUrl(data.embedUrl) : null;
+  const src = data ? safeEmbedUrl(data.token) : null;
+  // The frame is unmounted (not hidden) while DevTools is open, and comes back when it closes.
+  const devtoolsOpen = useDevtoolsOpen();
 
   return (
     <div className={styles.player}>
@@ -39,6 +48,8 @@ export function EpisodePlayer({ anime, episode, language }: EpisodePlayerProps) 
         <div className={styles.noTrailer}>
           <ErrorNotice error={error} onRetry={() => void refetch()} />
         </div>
+      ) : devtoolsOpen ? (
+        <p className={styles.noTrailer}>Close developer tools to keep watching.</p>
       ) : src ? (
         <iframe
           key={src}

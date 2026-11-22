@@ -1,4 +1,5 @@
 import type { AnimeDetail, StreamConfig, StreamSource } from '../../../shared/api.js';
+import { encodeStreamToken } from '../../../shared/streamToken.js';
 import { HttpError } from '../errors.js';
 
 /**
@@ -101,6 +102,6 @@ export class EmbedStreams {
     }
     const embedUrl = buildEmbedUrl(template, { anilistId: anime.id, malId: anime.malId, episode, language: lang });
     if (!embedUrl) throw new HttpError(404, 'NOT_FOUND', 'This title is not available to play.');
-    return { episode, language: lang, embedUrl };
+    return { episode, language: lang, token: encodeStreamToken(embedUrl) };
   }
 }

@@ -95,11 +95,12 @@ export interface StreamConfig {
   readonly languages: readonly string[];
 }
 
-/** A playable episode: an https embed URL on the configured provider. */
+/** A playable episode on the configured provider. */
 export interface StreamSource {
   readonly episode: number;
   readonly language: string;
-  readonly embedUrl: string;
+  /** The https embed URL, encoded with `encodeStreamToken` (shared/streamToken.ts). */
+  readonly token: string;
 }
 
 export interface Episode {
