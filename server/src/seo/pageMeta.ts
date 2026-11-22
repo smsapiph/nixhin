@@ -1,4 +1,4 @@
-import type { AnimeDetail } from '../../../shared/api.js';
+import type { AnimeDetail, MediaDetail, MediaKind } from '../../../shared/api.js';
 
 /**
  * Link-preview metadata for share links. Crawlers (Facebook/Messenger, X, Discord, …) do not
@@ -156,4 +156,72 @@ export function injectMeta(html: string, tags: string): string {
   const end = html.indexOf(META_END, start);
   if (start === -1 || end === -1) return html;
   return html.slice(0, start) + tags + html.slice(end + META_END.length);
+}
+
+/* ------------------------------------------------------------------ Movies & TV */
+
+export interface MediaLink {
+  readonly kind: MediaKind;
+  readonly id: number;
+  /** TV only: `?s=` and `?ep=`. */
+  readonly season: number | null;
+  readonly episode: number | null;
+}
+
+function parseMedia(url: URL, pattern: RegExp): MediaLink | null {
+  const match = pattern.exec(url.pathname);
+  if (!match) return null;
+  const kind = match[1] === 'movie' ? 'movie' : 'tv';
+  const id = Number(match[2]);
+  if (id < 1) return null;
+  if (kind === 'movie') return { kind, id, season: null, episode: null };
+  const sRaw = url.searchParams.get('s');
+  const epRaw = url.searchParams.get('ep');
+  const season = sRaw && /^\d{1,3}$/.test(sRaw) ? Number(sRaw) : null;
+  const episode = season !== null && epRaw && /^\d{1,4}$/.test(epRaw) && Number(epRaw) >= 1 ? Number(epRaw) : null;
+  return { kind, id, season: episode === null ? null : season, episode };
+}
+
+/** Parses `/movie/:id` and `/tv/:id?s=&ep=`; null for anything else. */
+export function parseMediaLink(url: URL): MediaLink | null {
+  return parseMedia(url, /^\/(movie|tv)\/(\d{1,9})\/?$/);
+}
+
+/** Parses the share-card URL `/og/movie/:id.jpg` or `/og/tv/:id.jpg?s=&ep=`. */
+export function parseMediaCardLink(url: URL): MediaLink | null {
+  return parseMedia(url, /^\/og\/(movie|tv)\/(\d{1,9})\.jpg$/);
+}
+
+function mediaQuery(link: MediaLink): string {
+  return link.season !== null && link.episode !== null ? `?s=${link.season}&ep=${link.episode}` : '';
+}
+
+export function mediaCardPath(link: MediaLink): string {
+  return `/og/${link.kind}/${link.id}.jpg${mediaQuery(link)}`;
+}
+
+/** e.g. "Watch Shōgun S1 Episode 4 · Nixhin". */
+export function mediaMeta(detail: MediaDetail, link: MediaLink, siteUrl: string): PageMeta {
+  const url = `${siteUrl}/${link.kind}/${detail.id}${mediaQuery(link)}`;
+  const year = detail.year !== null ? ` (${detail.year})` : '';
+  let title: string;
+  let description: string;
+  if (link.kind === 'tv' && link.season !== null && link.episode !== null) {
+    title = `Watch ${detail.title} S${link.season} Episode ${link.episode} · ${SITE_NAME}`;
+    const lead = `Season ${link.season}, episode ${link.episode} of ${detail.title}. Free on ${SITE_NAME}, no account needed.`;
+    description = detail.synopsis ? truncate(`${lead} ${detail.synopsis}`, DESCRIPTION_LIMIT) : lead;
+  } else {
+    title = `Watch ${detail.title}${year} · ${SITE_NAME}`;
+    description = detail.synopsis
+      ? truncate(detail.synopsis, DESCRIPTION_LIMIT)
+      : `Watch ${detail.title} free on ${SITE_NAME}. No account needed.`;
+  }
+  return {
+    title,
+    description,
+    url,
+    image: `${siteUrl}${mediaCardPath(link)}`,
+    imageAlt: title.replace(` · ${SITE_NAME}`, ''),
+    type: 'website',
+  };
 }

@@ -1,7 +1,6 @@
-import type { AnimeRef } from '../../shared/api';
 import { prefsStore, parsePrefsValue, type Prefs } from './prefs';
 import { mergeProgress, parseProgressValue, progressStore, type WatchProgress } from './progress';
-import { MAX_QUEUE_ITEMS, parseQueueValue, queueStore } from './queueStorage';
+import { MAX_QUEUE_ITEMS, itemKey, kindOf, parseQueueValue, queueStore, type QueueItem } from './queueStorage';
 import { MAX_SEARCHES, parseSearchesValue, searchHistoryStore } from './searchHistory';
 
 /** Everything Nixhin keeps on this device, as one portable file. */
@@ -9,7 +8,7 @@ export interface Backup {
   readonly app: 'nixhin';
   readonly version: 1;
   readonly exportedAt: string;
-  readonly queue: readonly AnimeRef[];
+  readonly queue: readonly QueueItem[];
   readonly progress: readonly WatchProgress[];
   readonly searches: readonly string[];
   readonly prefs: Prefs;
@@ -61,8 +60,8 @@ export interface ImportSummary {
 /** Merges a backup into this device's data; nothing already here is lost. */
 export function importBackup(backup: Backup): ImportSummary {
   const queueBefore = queueStore.get();
-  const known = new Set(queueBefore.map((item) => item.id));
-  const added = backup.queue.filter((item) => !known.has(item.id));
+  const known = new Set(queueBefore.map((item) => itemKey(kindOf(item), item.id)));
+  const added = backup.queue.filter((item) => !known.has(itemKey(kindOf(item), item.id)));
   queueStore.set([...queueBefore, ...added].slice(0, MAX_QUEUE_ITEMS));
 
   const progress = mergeProgress(progressStore.get(), backup.progress);

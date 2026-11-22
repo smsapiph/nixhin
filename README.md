@@ -1,7 +1,8 @@
 # Nixhin
 
-A free, no-account anime discovery UI. React + TypeScript frontend, with a small,
-hardened Node/TypeScript backend that proxies the [AniList GraphQL API](https://docs.anilist.co).
+A free, no-account anime discovery UI — with optional movies and TV shows. React + TypeScript frontend,
+with a small, hardened Node/TypeScript backend that proxies the [AniList GraphQL API](https://docs.anilist.co)
+and, when a token is set, [TMDB](https://developer.themoviedb.org/) for movies and TV.
 
 > History: the project first used Jikan (unofficial MyAnimeList API), but Jikan’s public API
 > was shut down on 1 Oct 2026, so the data source was switched to AniList. Only the backend
@@ -58,6 +59,16 @@ All endpoints are `GET`, return JSON, and validate their inputs (400 with a clea
 | `/api/genres`                         | Genre names (explicit genres excluded)      |
 | `/api/schedule`                       | Shows airing in the next 7 days             |
 | `/api/stream/config`                  | Whether episode playback is configured      |
+| `/api/media/config`                   | Whether movies & TV (TMDB) and their playback are on |
+| `/api/movie/list/:list?page=`         | `trending`, `popular`, `now_playing`, `upcoming` |
+| `/api/tv/list/:list?page=`            | `trending`, `popular`, `on_the_air`, `airing_today` |
+| `/api/{movie,tv}/discover?genre=&page=` | Popular titles, optionally in one TMDB genre id |
+| `/api/{movie,tv}/genres`              | TMDB genres (id + name)                     |
+| `/api/{movie,tv}/search?q=&page=`     | Search (adult titles excluded)              |
+| `/api/movie/:id`, `/api/tv/:id`       | Details: cast, trailer, rating, seasons, recommendations |
+| `/api/tv/:id/season/:n`               | Episodes of one season                      |
+| `/api/movie/collection/:id`           | A movie series in release order             |
+| `/api/movie/:id/stream`, `/api/tv/:id/stream?season=&episode=` | Encoded embed URL (provider) |
 | `/api/anime/:id/stream?episode=&language=` | Encoded embed URL for one episode (provider) |
 
 Errors share one shape: `{ "error": { "code": "...", "message": "..." } }`.
@@ -107,6 +118,26 @@ STREAM_LANGUAGES=sub,dub
 | `/anime/:id?ep=&lang=` | Watch page; episode and language survive refresh |
 | `/search?q=` | Search results |
 | anything else | 404 page |
+
+## Movies & TV shows (TMDB)
+
+Set `TMDB_READ_TOKEN` (the **API Read Access Token** from themoviedb.org → Settings → API) and the header gets an
+**Anime / Movies / TV shows** switch. Without it the site is anime-only, exactly as before.
+
+- Pages: `/movies` and `/tv` (homes), `/movie/:id`, `/tv/:id?s=1&ep=4`, `/search?q=…&type=movie|tv`.
+- Code: `server/src/tmdb/` (client, zod schemas, mappers, catalog), `server/src/routes/media.ts`,
+  `src/api/media.ts`, `src/pages/Media*.tsx`, `src/components/media/`.
+- Playback is optional and separate from anime: `STREAM_MOVIE_TEMPLATE` (`{tmdbId}` or `{imdbId}`) and
+  `STREAM_TV_TEMPLATE` (also `{season}`, `{episode}`), https only, validated at startup like
+  `STREAM_EMBED_TEMPLATE`. Without them movie and TV pages play trailers. Add the provider's origin to `frame-src`
+  in `netlify.toml`. Example for links like `/embed/movie/tt1300854` and `/embed/tv/1399/1/1`:
+  `STREAM_MOVIE_TEMPLATE=https://mydomain.com/embed/movie/{imdbId}` and
+  `STREAM_TV_TEMPLATE=https://mydomain.com/embed/tv/{tmdbId}/{season}/{episode}`. With `{imdbId}`, the few
+  movies TMDB has no IMDb id for say "This movie is not available to play".
+- My queue and Continue watching hold all three kinds (anime entries saved before keep working); TV progress is
+  tracked per season.
+- TMDB's terms ask for credit: the footer says "This product uses the TMDB API but is not endorsed or certified by
+  TMDB" when movies & TV are on. Commercial use needs a TMDB commercial licence.
 
 ## TV remote navigation
 
@@ -159,7 +190,7 @@ Netlify Function (`server/netlify/functions/api.ts`) mounted at `/api/*`, so the
 `/api` with no CORS. The function reuses the same Hono app as `server/src/index.ts` (`server/src/bootstrap.ts`),
 and rate-limits on Netlify's `context.ip`.
 
-- Set runtime config (e.g. `STREAM_EMBED_TEMPLATE`, `STREAM_LANGUAGES`) in **Site configuration →
+- Set runtime config (e.g. `TMDB_READ_TOKEN`, `STREAM_EMBED_TEMPLATE`, `STREAM_LANGUAGES`) in **Site configuration →
   Environment variables**, with a scope that includes **Functions**. Values in `netlify.toml` are not visible to
   functions. Redeploy after changing them.
 - If you change the stream provider, update `frame-src` in the CSP in `netlify.toml`.
@@ -170,14 +201,16 @@ and rate-limits on Netlify's `context.ip`.
 
 - The home page uses the static tags in `index.html` and `public/og-image.png`. Crawlers need absolute URLs, so
   `%SITE_URL%` is filled in at build time from Netlify's `URL` (or `SITE_URL` if you set it).
-- `/anime/*` is served by a second function (`server/netlify/functions/page.ts`). For link-preview bots and
+- `/anime/*`, `/movie/*` and `/tv/*` are served by a second function (`server/netlify/functions/page.ts`). For link-preview bots and
   search crawlers it replaces the `<!-- page-meta -->` block with the anime's title, episode and language
   (e.g. *Watch Black Clover Episode 5 (English dub) · Nixhin*); see `server/src/seo/pageMeta.ts`. Browsers get
   `index.html` unchanged, so normal visits cost no extra AniList call. If AniList is slow (>4 s) or the id is
   unknown, the site-wide preview is used.
-- `og:image` points at a branded share card, `/og/anime/:id.jpg?ep=&lang=`, rendered by a third function
+- `og:image` points at a branded share card, `/og/anime/:id.jpg?ep=&lang=` (or `/og/movie/:id.jpg`,
+  `/og/tv/:id.jpg?s=&ep=`), rendered by a third function
   (`server/netlify/functions/og.ts`, layout in `server/src/seo/ogCard.ts`): banner background, poster, title and
-  an episode badge. It uses satori + resvg, is encoded as JPEG (~100–150 KB; Messenger and WhatsApp skip heavy images), and uses the fonts in `public/og-fonts/` (SIL Open Font License). Netlify's
+  an episode badge. It uses satori + resvg, is encoded as JPEG (~100–150 KB; Messenger and WhatsApp skip heavy images), and uses the fonts in `public/og-fonts/` (SIL Open Font License): Shippori Mincho and Zen Kaku Gothic New,
+  plus Latin Extended subsets of Noto Serif and Noto Sans for letters those lack (ō, ū in "Shōgun", ł, š, …). Netlify's
   CDN keeps each card for a week; unknown ids redirect to `/og-image.png`. An episode badge only appears for
   episodes that have aired.
 - Facebook/Messenger cache previews; use the [Sharing Debugger](https://developers.facebook.com/tools/debug/)
@@ -195,4 +228,5 @@ and rate-limits on Netlify's `context.ip`.
   Netlify: `/* /index.html 200`, Vercel: a rewrite of `/(.*)` to `/index.html`.
 - The rate limiter and cache are in-memory (single instance). Use Redis or similar if you scale out.
 
-Anime data from AniList. Nixhin is not affiliated with AniList.
+Anime data from AniList. Movie and TV data from TMDB. Nixhin is not affiliated with AniList or TMDB; this product
+uses the TMDB API but is not endorsed or certified by TMDB.

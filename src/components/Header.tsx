@@ -1,23 +1,42 @@
-import { useId, useState, type FormEvent, type MouseEvent } from 'react';
+import { useId, useState, useSyncExternalStore, type FormEvent, type MouseEvent } from 'react';
 import { useLocation } from 'react-router';
 import { isWideLayout } from '../hooks/useLayout';
 import { useStore } from '../hooks/useStore';
 import { matchSearches, removeSearch, searchHistoryStore } from '../lib/searchHistory';
-import { MAX_QUERY_LENGTH, homePath, isPlainClick } from '../routes';
-import type { Layout, SectionId } from '../types';
+import { MAX_QUERY_LENGTH, MODE_HOMES, isPlainClick, type Mode } from '../routes';
+import type { Layout } from '../types';
 import { Icon } from './Icon';
-import { NAV_ITEMS, type NavigateHandler } from './navigation';
+import { MODE_LABELS, MODE_SEARCH_LABELS, navLinks } from './navigation';
 import { AccentDot } from './ui';
 import styles from './Header.module.css';
 
 interface HeaderProps {
   readonly layout: Layout;
-  readonly onNavigate: NavigateHandler;
+  /** What the site is browsing; the links, search and switch follow it. */
+  readonly mode: Mode;
+  /** Shows the Anime / Movies / TV shows switch (movies & TV are configured on the server). */
+  readonly showModes: boolean;
+  /** Goes to a path (a home or one of its `#sections`). */
+  readonly onLink: (href: string) => void;
   readonly onSearch: (query: string) => void;
 }
 
-export function Header({ layout, onNavigate, onSearch }: HeaderProps) {
+const MODES: readonly Mode[] = ['anime', 'movie', 'tv'];
+
+/** Width at which the mode switch, the section links and the search box all fit on one line. */
+const ROOMY_QUERY = '(min-width: 1400px)';
+const subscribeRoomy = (onChange: () => void) => {
+  const list = window.matchMedia(ROOMY_QUERY);
+  list.addEventListener('change', onChange);
+  return () => list.removeEventListener('change', onChange);
+};
+const isRoomy = () => window.matchMedia(ROOMY_QUERY).matches;
+
+export function Header({ layout, mode, showModes, onLink, onSearch }: HeaderProps) {
   const wide = isWideLayout(layout);
+  const roomy = useSyncExternalStore(subscribeRoomy, isRoomy, () => true);
+  // With the mode switch in the bar, the section links move into the menu when space runs out.
+  const inlineNav = wide && (!showModes || roomy);
   const isPhone = layout === 'phone';
   const [menuOpen, setMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
@@ -38,15 +57,34 @@ export function Header({ layout, onNavigate, onSearch }: HeaderProps) {
   const suggestionsId = useId();
 
   // Collapsible panels only exist in narrow layouts.
-  const showMenu = !wide && menuOpen;
+  const showMenu = !inlineNav && menuOpen;
   const showSearchPanel = isPhone && searchOpen;
 
-  const go = (section: SectionId) => (event: MouseEvent<HTMLAnchorElement>) => {
+  const links = navLinks(mode);
+  const searchLabel = MODE_SEARCH_LABELS[mode];
+
+  const go = (href: string) => (event: MouseEvent<HTMLAnchorElement>) => {
     if (!isPlainClick(event)) return;
     event.preventDefault();
     setMenuOpen(false);
-    onNavigate(section);
+    onLink(href);
   };
+
+  const modeSwitch = showModes && (
+    <nav aria-label="Catalog" className={`${styles.modes} ${wide ? '' : styles.modesRow}`}>
+      {MODES.map((item) => (
+        <a
+          key={item}
+          href={MODE_HOMES[item]}
+          className={styles.mode}
+          aria-current={item === mode ? 'page' : undefined}
+          onClick={go(MODE_HOMES[item])}
+        >
+          {MODE_LABELS[item]}
+        </a>
+      ))}
+    </nav>
+  );
 
   const runSearch = (raw: string) => {
     const query = raw.trim();
@@ -78,7 +116,7 @@ export function Header({ layout, onNavigate, onSearch }: HeaderProps) {
     >
       <Icon name="search" />
       <label className="sr-only" htmlFor={searchId}>
-        Search anime
+        {searchLabel}
       </label>
       <input
         value={typed}
@@ -90,7 +128,7 @@ export function Header({ layout, onNavigate, onSearch }: HeaderProps) {
         id={searchId}
         name="q"
         type="search"
-        placeholder="Search anime"
+        placeholder={searchLabel}
         maxLength={MAX_QUERY_LENGTH}
         autoComplete="off"
         enterKeyHint="search"
@@ -132,7 +170,7 @@ export function Header({ layout, onNavigate, onSearch }: HeaderProps) {
   return (
     <header className={styles.header}>
       <div className={styles.bar}>
-        <a href={homePath()} className={styles.brand} aria-label="Nixhin home" onClick={go('top')}>
+        <a href={MODE_HOMES[mode]} className={styles.brand} aria-label="Nixhin home" onClick={go(MODE_HOMES[mode])}>
           <span className={styles.wordmark}>nixhin</span>
           <AccentDot />
           <span className={styles.kana} aria-hidden="true">
@@ -140,10 +178,12 @@ export function Header({ layout, onNavigate, onSearch }: HeaderProps) {
           </span>
         </a>
 
-        {wide && (
+        {wide && modeSwitch}
+
+        {inlineNav && (
           <nav aria-label="Main" className={styles.nav}>
-            {NAV_ITEMS.map((item) => (
-              <a key={item.section} href={homePath(item.section)} className={styles.navLink} onClick={go(item.section)}>
+            {links.map((item) => (
+              <a key={item.href} href={item.href} className={styles.navLink} onClick={go(item.href)}>
                 {item.label}
               </a>
             ))}
@@ -169,7 +209,7 @@ export function Header({ layout, onNavigate, onSearch }: HeaderProps) {
           searchForm
         )}
 
-        {!wide && (
+        {!inlineNav && (
           <button
             type="button"
             className={styles.roundButton}
@@ -186,13 +226,15 @@ export function Header({ layout, onNavigate, onSearch }: HeaderProps) {
         )}
       </div>
 
+      {!wide && modeSwitch}
+
       {showSearchPanel && <div className={styles.panel}>{searchForm}</div>}
 
       {showMenu && (
         <nav id={menuId} aria-label="Menu" className={styles.menu}>
-          {NAV_ITEMS.map((item) => (
-            <a key={item.section} href={homePath(item.section)} className={styles.menuLink} onClick={go(item.section)}>
-              {item.menuLabel ?? item.label}
+          {links.map((item) => (
+            <a key={item.href} href={item.href} className={styles.menuLink} onClick={go(item.href)}>
+              {item.label}
             </a>
           ))}
         </nav>

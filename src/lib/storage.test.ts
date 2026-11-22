@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { parseBackup } from './backup';
 import {
+  episodeKey,
+  findProgress,
   isFinished,
   mergeProgress,
   parseProgressValue,
@@ -108,5 +110,47 @@ describe('backup', () => {
 
   it('de-duplicates queue entries', () => {
     expect(parseQueueValue([{ id: 1, title: 'A', imageUrl: null }, { id: 1, title: 'B', imageUrl: null }])).toHaveLength(1);
+  });
+});
+
+describe('movies and TV shows in the same stores', () => {
+  const shogun = { id: 7, title: 'Shōgun', imageUrl: null, kind: 'tv' as const, total: episodeKey(1, 10) };
+  const movie = { id: 7, title: 'Dune', imageUrl: null, kind: 'movie' as const, total: 1 };
+
+  it('keeps anime, movie and TV entries with the same id apart', () => {
+    let list = recordEpisode([], show, 3, 'sub', 1);
+    list = recordEpisode(list, shogun, 4, null, 2, 1);
+    list = recordEpisode(list, movie, 1, null, 3);
+    expect(list).toHaveLength(3);
+    expect(findProgress(list, 7)?.title).toBe('Frieren');
+    expect(findProgress(list, 7, 'tv')).toMatchObject({ season: 1, episode: 4, kind: 'tv' });
+    expect(removeProgress(list, 7, 'movie').map((entry) => entry.title)).toEqual(['Shōgun', 'Frieren']);
+  });
+
+  it('tracks TV episodes per season and finishes at the latest aired one', () => {
+    let list = setWatched([], shogun, episodeKey(1, 3), true, 1);
+    expect(list[0]).toMatchObject({ season: 1, episode: 3, watched: [10003] });
+    list = setWatched(list, shogun, episodeKey(1, 10), true, 2);
+    expect(isFinished(list[0] as WatchProgress)).toBe(true);
+  });
+
+  it('survives a storage round trip and rejects TV entries without a season', () => {
+    const list = recordEpisode([], shogun, 2, null, 5, 1);
+    expect(parseProgressValue(JSON.parse(JSON.stringify(list)))).toEqual(list);
+    expect(parseProgressValue([{ ...list[0], season: undefined }])).toEqual([]);
+  });
+
+  it('stores the kind in the queue and de-duplicates per kind', () => {
+    expect(
+      parseQueueValue([
+        { id: 1, title: 'A', imageUrl: null },
+        { id: 1, title: 'B', imageUrl: null, kind: 'movie' },
+        { id: 1, title: 'B again', imageUrl: null, kind: 'movie' },
+        { id: 1, title: 'C', imageUrl: null, kind: 'podcast' },
+      ]),
+    ).toEqual([
+      { id: 1, title: 'A', imageUrl: null },
+      { id: 1, title: 'B', imageUrl: null, kind: 'movie' },
+    ]);
   });
 });

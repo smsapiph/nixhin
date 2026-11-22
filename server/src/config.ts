@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { templateProblem } from './stream/embed.js';
+import { mediaTemplateProblem, type MediaTemplateKind } from './stream/mediaEmbed.js';
 
 const originList = z
   .string()
@@ -21,6 +22,18 @@ const originList = z
       }, 'Each ALLOWED_ORIGINS entry must be an origin like https://example.com'),
     ),
   );
+
+/** Optional movie/TV embed template: empty means "no playback" (trailers only). */
+const mediaTemplate = (kind: MediaTemplateKind) =>
+  z
+    .string()
+    .trim()
+    .transform((value) => value || undefined)
+    .optional()
+    .superRefine((value, ctx) => {
+      const problem = value === undefined ? null : mediaTemplateProblem(value, kind);
+      if (problem) ctx.addIssue({ code: 'custom', message: problem });
+    });
 
 const EnvSchema = z.object({
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
@@ -55,6 +68,19 @@ const EnvSchema = z.object({
     .default('sub,dub')
     .transform((value) => value.split(',').map((v) => v.trim()).filter(Boolean))
     .pipe(z.array(z.string().regex(/^[a-z]{2,10}$/, 'language codes must be 2-10 lowercase letters')).min(1)),
+  /** TMDB "API Read Access Token"; empty/unset keeps the site anime-only. */
+  TMDB_READ_TOKEN: z
+    .string()
+    .trim()
+    .transform((value) => value || undefined)
+    .optional()
+    .refine((value) => value === undefined || /^[A-Za-z0-9._-]{20,1000}$/.test(value), 'must be a TMDB read access token'),
+  TMDB_API_URL: z
+    .url()
+    .refine((url) => url.startsWith('https://') || url.startsWith('http://127.0.0.1') || url.startsWith('http://localhost'), 'TMDB_API_URL must use https')
+    .default('https://api.themoviedb.org/3'),
+  STREAM_MOVIE_TEMPLATE: mediaTemplate('movie'),
+  STREAM_TV_TEMPLATE: mediaTemplate('tv'),
 });
 
 export type Config = z.infer<typeof EnvSchema>;

@@ -1,4 +1,5 @@
 import type { AnimeRef } from '../../shared/api';
+import type { QueueItem } from '../lib/queueStorage';
 import { Browse } from '../components/home/Browse';
 import { ContinueWatching } from '../components/home/ContinueWatching';
 import { Hero } from '../components/home/Hero';
@@ -10,7 +11,7 @@ import { isTv } from '../lib/tvDevice';
 import styles from './HomePage.module.css';
 
 interface HomePageProps {
-  readonly queue: readonly AnimeRef[];
+  readonly queue: readonly QueueItem[];
   readonly isQueued: (id: number) => boolean;
   readonly onToggleQueue: (anime: AnimeRef) => void;
   readonly onOpen: (id: number) => void;
@@ -25,7 +26,7 @@ export function HomePage({ queue, isQueued, onToggleQueue, onOpen, onNavigate }:
       <ContinueWatching />
       <Trending onOpen={onOpen} onNavigate={onNavigate} />
       <NewSeason onOpen={onOpen} onNavigate={onNavigate} />
-      <MyQueue items={queue} onOpen={onOpen} />
+      <MyQueue items={queue} />
       <Browse onOpen={onOpen} />
       <Schedule onOpen={onOpen} />
     </main>

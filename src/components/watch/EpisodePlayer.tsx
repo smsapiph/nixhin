@@ -1,7 +1,7 @@
 import { Fragment, useRef } from 'react';
 import type { AnimeDetail } from '../../../shared/api';
-import { decodeStreamToken } from '../../../shared/streamToken';
 import { useStream } from '../../api/queries';
+import { safeEmbedUrl } from '../../lib/embed';
 import { useDevtoolsOpen } from '../../hooks/useDevtoolsOpen';
 import { isTv } from '../../lib/tvDevice';
 import { episodeControlKey } from '../../lib/tvPlayer';
@@ -15,19 +15,6 @@ interface EpisodePlayerProps {
   readonly language: string;
 }
 
-/**
- * Decodes the server's stream token. Only https embeds are ever framed, even though the
- * server builds them from a fixed template.
- */
-function safeEmbedUrl(token: string): string | null {
-  const url = decodeStreamToken(token);
-  if (url === null) return null;
-  try {
-    return new URL(url).protocol === 'https:' ? url : null;
-  } catch {
-    return null;
-  }
-}
 
 /**
  * Plays an episode through the server-configured provider's embed player.

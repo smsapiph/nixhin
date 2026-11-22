@@ -1,8 +1,8 @@
 import { Resvg } from '@resvg/resvg-js';
 import jpeg from 'jpeg-js';
 import satori from 'satori';
-import type { AnimeDetail } from '../../../shared/api.js';
-import type { AnimeLink } from './pageMeta.js';
+import type { AnimeDetail, MediaDetail } from '../../../shared/api.js';
+import type { AnimeLink, MediaLink } from './pageMeta.js';
 
 /**
  * Branded 1200×630 share card for an anime link: banner background, poster, title and
@@ -27,7 +27,25 @@ export interface CardFonts {
   readonly serif: ArrayBuffer;
   /** Zen Kaku Gothic New 500 (full Japanese): everything else, and fallback glyphs. */
   readonly sans: ArrayBuffer;
+  /**
+   * Noto Serif 700 / Noto Sans 500, Latin Extended only: letters the Japanese faces lack
+   * (ō ū ā in romanised titles like "Shōgun", ł š ő in European ones).
+   */
+  readonly serifLatin: ArrayBuffer;
+  readonly sansLatin: ArrayBuffer;
 }
+
+/** The font files in public/og-fonts, by CardFonts key. */
+export const CARD_FONT_FILES: Readonly<Record<keyof CardFonts, string>> = {
+  serif: 'shippori-mincho-700.ttf',
+  sans: 'zen-kaku-gothic-new-500.ttf',
+  serifLatin: 'noto-serif-700-latin-ext.ttf',
+  sansLatin: 'noto-sans-500-latin-ext.ttf',
+};
+
+/** Each family falls back to its Latin Extended companion for missing letters. */
+const SERIF = 'Serif, SerifLatin';
+const SANS = 'Sans, SansLatin';
 
 export interface CardImages {
   /** data: URIs, already fetched; null when missing or the fetch failed. */
@@ -84,6 +102,36 @@ export function cardContent(anime: AnimeDetail, link: AnimeLink): CardContent {
   };
 }
 
+/** "2h 46m" / "58m". */
+function runtimeLabel(minutes: number | null): string | null {
+  if (minutes === null) return null;
+  const hours = Math.floor(minutes / 60);
+  return hours > 0 ? `${hours}h ${minutes % 60}m` : `${minutes}m`;
+}
+
+/** The card for a movie or TV link. A TV episode badge appears only for episodes that exist. */
+export function mediaCardContent(detail: MediaDetail, link: MediaLink): CardContent {
+  const regular = detail.seasons.filter((season) => season.number > 0);
+  const season = link.season === null ? undefined : detail.seasons.find((entry) => entry.number === link.season);
+  const episode = season && link.episode !== null && link.episode <= season.episodeCount ? link.episode : null;
+  const details =
+    detail.kind === 'movie'
+      ? ['Movie', detail.year !== null ? String(detail.year) : null, runtimeLabel(detail.runtime)]
+      : [
+          'TV show',
+          detail.year !== null ? String(detail.year) : null,
+          regular.length > 0 ? `${regular.length} season${regular.length === 1 ? '' : 's'}` : (detail.genres[0] ?? null),
+        ];
+  if (detail.score !== null) details.push(`★ ${detail.score.toFixed(1)}`);
+  return {
+    title: detail.title,
+    native: detail.originalTitle,
+    badge: season && episode !== null ? `S${season.number} · EPISODE ${episode}` : 'WATCH NOW',
+    language: null,
+    details: details.filter((d): d is string => d !== null),
+  };
+}
+
 function titleSize(title: string, narrow: boolean): number {
   const n = title.length + (narrow ? 0 : -8);
   if (n > 60) return 46;
@@ -107,7 +155,7 @@ export function cardTree(content: CardContent, images: CardImages): Node {
   const title = content.title.length > 90 ? `${content.title.slice(0, 88).trimEnd()}…` : content.title;
 
   return el(
-    { width: CARD_WIDTH, height: CARD_HEIGHT, position: 'relative', background: C.ink, fontFamily: 'Sans', color: C.cream },
+    { width: CARD_WIDTH, height: CARD_HEIGHT, position: 'relative', background: C.ink, fontFamily: SANS, color: C.cream },
     background ? img(background, { position: 'absolute', left: 0, top: 0, width: CARD_WIDTH, height: CARD_HEIGHT, objectFit: 'cover' }) : null,
     el({
       position: 'absolute',
@@ -122,7 +170,7 @@ export function cardTree(content: CardContent, images: CardImages): Node {
       { position: 'absolute', left: 72, top: 60, bottom: 60, width: hasPoster ? 720 : 1056, flexDirection: 'column', justifyContent: 'space-between' },
       el(
         { alignItems: 'center' },
-        el({ fontFamily: 'Serif', fontSize: 38, letterSpacing: 2 }, 'nixhin'),
+        el({ fontFamily: SERIF, fontSize: 38, letterSpacing: 2 }, 'nixhin'),
         el({ width: 11, height: 11, borderRadius: 999, background: C.accentLight, marginLeft: 10, marginTop: 10 }),
         el({ fontSize: 16, letterSpacing: 6, color: C.faint, marginLeft: 18, marginTop: 4 }, 'ニクシン'),
       ),
@@ -133,7 +181,7 @@ export function cardTree(content: CardContent, images: CardImages): Node {
           pill(content.badge, C.accent, '#ffffff'),
           content.language ? pill(content.language, 'rgba(246,244,239,0.14)', C.cream) : null,
         ),
-        el({ fontFamily: 'Serif', fontSize: titleSize(title, hasPoster), lineHeight: 1.08, letterSpacing: 0.5 }, title),
+        el({ fontFamily: SERIF, fontSize: titleSize(title, hasPoster), lineHeight: 1.08, letterSpacing: 0.5 }, title),
         content.native ? el({ fontSize: 24, color: C.faint, marginTop: 14, letterSpacing: 2 }, content.native) : null,
         content.details.length
           ? el({ fontSize: 22, color: C.soft, marginTop: 22, alignItems: 'center' }, ...dotted(content.details))
@@ -174,6 +222,8 @@ export async function renderCard(content: CardContent, images: CardImages, fonts
     fonts: [
       { name: 'Serif', data: fonts.serif, weight: 700, style: 'normal' },
       { name: 'Sans', data: fonts.sans, weight: 500, style: 'normal' },
+      { name: 'SerifLatin', data: fonts.serifLatin, weight: 700, style: 'normal' },
+      { name: 'SansLatin', data: fonts.sansLatin, weight: 500, style: 'normal' },
     ],
   });
   const image = new Resvg(svg, { fitTo: { mode: 'width', value: CARD_WIDTH }, background: C.ink }).render();

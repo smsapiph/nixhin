@@ -4,6 +4,9 @@ import { Footer } from './components/Footer';
 import { Header } from './components/Header';
 import { TabBar } from './components/TabBar';
 import { TvRemote } from './components/tv/TvRemote';
+import type { MediaKind, MediaSummary } from '../shared/api';
+import { useMediaConfig } from './api/media';
+import { HOME_SECTIONS, tabsFor } from './components/navigation';
 import { tabForSection, useActiveSection } from './hooks/useActiveSection';
 import { useLayout } from './hooks/useLayout';
 import { useQueue } from './hooks/useQueue';
@@ -13,7 +16,10 @@ import { AnimePage } from './pages/AnimePage';
 import { HomePage } from './pages/HomePage';
 import { NotFoundPage } from './pages/NotFoundPage';
 import { SearchPage } from './pages/SearchPage';
-import { MAX_QUERY_LENGTH, animePath, homePath, searchPath } from './routes';
+import { MediaHomePage } from './pages/MediaHomePage';
+import { MediaPage } from './pages/MediaPage';
+import { MediaSearchPage } from './pages/MediaSearchPage';
+import { MAX_QUERY_LENGTH, MODE_HOMES, animePath, homePath, mediaPath, modeForPath, searchPath } from './routes';
 import type { SectionId } from './types';
 import styles from './App.module.css';
 
@@ -81,37 +87,47 @@ export function App() {
   const queue = useQueue();
   const location = useLocation();
   const navigateTo = useNavigate();
-  const isHome = location.pathname === '/';
+  const { data: mediaConfig } = useMediaConfig();
+  const mediaEnabled = mediaConfig?.enabled === true;
+  // Movies & TV links still work while the config loads; the switch appears once it says yes.
+  const mode = modeForPath(location.pathname, location.search);
+  const modeHome = MODE_HOMES[mode];
+  const isModeHome = location.pathname === modeHome;
 
   useScrollOnNavigate();
 
-  const navigate = useCallback(
-    (section: SectionId) => {
-      navigateTo(homePath(section), { state: { smooth: isHome } satisfies ScrollState });
+  // Smooth-scroll only within the page already on screen.
+  const goTo = useCallback(
+    (href: string) => {
+      const path = href.split('#')[0] || '/';
+      navigateTo(href, { state: { smooth: path === location.pathname } satisfies ScrollState });
     },
-    [navigateTo, isHome],
+    [navigateTo, location.pathname],
   );
 
+  const navigate = useCallback((section: SectionId) => goTo(homePath(section)), [goTo]);
+
   const openAnime = useCallback((id: number) => navigateTo(animePath(id)), [navigateTo]);
+  const openMedia = useCallback((item: MediaSummary) => navigateTo(mediaPath(item.kind, item.id)), [navigateTo]);
   const search = useCallback(
     (query: string) => {
       searchHistoryStore.set((list) => addSearch(list, query));
-      navigateTo(searchPath(query));
+      navigateTo(searchPath(query, mode));
     },
-    [navigateTo],
+    [navigateTo, mode],
   );
 
-  // Go back when the previous page is ours; otherwise (deep link / refresh) go home.
+  // Go back when the previous page is ours; otherwise (deep link / refresh) go to this mode's home.
   const goBack = useCallback(() => {
-    if (location.key === 'default') navigateTo(homePath());
+    if (location.key === 'default') navigateTo(modeHome);
     else navigateTo(-1);
-  }, [navigateTo, location.key]);
+  }, [navigateTo, location.key, modeHome]);
 
-  const activeSection = useActiveSection(layout === 'phone' && isHome);
+  const activeSection = useActiveSection(layout === 'phone' && isModeHome, HOME_SECTIONS[mode]);
 
   return (
     <div className={styles.app}>
-      <Header layout={layout} onNavigate={navigate} onSearch={search} />
+      <Header layout={layout} mode={mode} showModes={mediaEnabled} onLink={goTo} onSearch={search} />
 
       <div className={styles.content}>
         <Routes>
@@ -133,15 +149,19 @@ export function App() {
               <AnimeRoute isQueued={queue.isQueued} onToggleQueue={queue.toggle} onOpen={openAnime} onBack={goBack} />
             }
           />
-          <Route path="/search" element={<SearchRoute onOpen={openAnime} onBack={goBack} />} />
+          <Route path="/movies" element={<MediaHomePage key="movie" kind="movie" queue={queue} />} />
+          <Route path="/tv" element={<MediaHomePage key="tv" kind="tv" queue={queue} />} />
+          <Route path="/movie/:id" element={<MediaRoute kind="movie" queue={queue} onOpen={openMedia} onBack={goBack} />} />
+          <Route path="/tv/:id" element={<MediaRoute kind="tv" queue={queue} onOpen={openMedia} onBack={goBack} />} />
+          <Route path="/search" element={<SearchRoute onOpen={openAnime} onOpenMedia={openMedia} onBack={goBack} />} />
           <Route path="*" element={<NotFoundPage onHome={() => navigate('top')} />} />
         </Routes>
       </div>
 
-      <Footer />
+      <Footer showTmdb={mediaEnabled} />
 
-      {isTv && <TvRemote isHome={isHome} onBack={goBack} />}
-      {layout === 'phone' && <TabBar active={tabForSection(activeSection)} onNavigate={navigate} />}
+      {isTv && <TvRemote isHome={isModeHome} onBack={goBack} />}
+      {layout === 'phone' && <TabBar tabs={tabsFor(mode)} active={tabForSection(activeSection)} onLink={goTo} />}
     </div>
   );
 }
@@ -156,12 +176,28 @@ function AnimeRoute(props: AnimeRouteProps) {
   return <AnimePage key={id} id={Number(id)} {...props} />;
 }
 
-type SearchRouteProps = Omit<Parameters<typeof SearchPage>[0], 'query'>;
+interface MediaRouteProps extends Omit<Parameters<typeof MediaPage>[0], 'id'> {
+  readonly kind: MediaKind;
+}
 
-/** `/search?q=…` — an empty query has nothing to show, so go home. */
-function SearchRoute(props: SearchRouteProps) {
+/** `/movie/:id` and `/tv/:id` — only plain positive integer ids are valid. */
+function MediaRoute(props: MediaRouteProps) {
+  const { id } = useParams();
+  if (!id || !/^[1-9]\d{0,8}$/.test(id)) return <NotFoundPage onHome={props.onBack} />;
+  return <MediaPage key={`${props.kind}-${id}`} id={Number(id)} {...props} />;
+}
+
+interface SearchRouteProps extends Omit<Parameters<typeof SearchPage>[0], 'query'> {
+  readonly onOpenMedia: (item: MediaSummary) => void;
+}
+
+/** `/search?q=…&type=movie|tv` — an empty query has nothing to show, so go home. */
+function SearchRoute({ onOpenMedia, ...props }: SearchRouteProps) {
   const [params] = useSearchParams();
   const query = (params.get('q') ?? '').trim().slice(0, MAX_QUERY_LENGTH);
-  if (!query) return <Navigate to={homePath()} replace />;
+  const type = params.get('type');
+  const kind: MediaKind | null = type === 'movie' || type === 'tv' ? type : null;
+  if (!query) return <Navigate to={kind ? MODE_HOMES[kind] : homePath()} replace />;
+  if (kind) return <MediaSearchPage key={`${kind}-${query}`} kind={kind} query={query} onOpen={onOpenMedia} onBack={props.onBack} />;
   return <SearchPage key={query} query={query} {...props} />;
 }

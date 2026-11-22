@@ -1,15 +1,16 @@
-import type { AnimeSummary } from '../../shared/api';
+import type { AnimeRef } from '../../shared/api';
 import { ShowCard } from './ShowCard';
 import { TitleLines } from './ui';
 import styles from './AnimeGrid.module.css';
 
-interface AnimeGridProps {
-  readonly items: readonly AnimeSummary[];
+interface AnimeGridProps<T extends AnimeRef> {
+  readonly items: readonly T[];
   readonly onOpen: (id: number) => void;
-  readonly subtitle: (anime: AnimeSummary) => string;
+  readonly subtitle: (item: T) => string;
 }
 
-export function AnimeGrid({ items, onOpen, subtitle }: AnimeGridProps) {
+/** A grid of poster cards (anime, movies or TV shows). */
+export function AnimeGrid<T extends AnimeRef>({ items, onOpen, subtitle }: AnimeGridProps<T>) {
   return (
     <div className={styles.grid}>
       {items.map((anime) => (
