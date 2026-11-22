@@ -1,44 +1,31 @@
-import { homePath, isPlainClick } from '../routes';
-import type { SectionId } from '../types';
-import { Icon, type IconName } from './Icon';
-import type { NavigateHandler } from './navigation';
+import { isPlainClick } from '../routes';
+import { Icon } from './Icon';
+import type { Tab } from './navigation';
 import styles from './TabBar.module.css';
 
-interface Tab {
-  readonly section: SectionId;
-  readonly icon: IconName;
-  readonly label: string;
-}
-
-const TABS: readonly Tab[] = [
-  { section: 'top', icon: 'home', label: 'Home' },
-  { section: 'browse', icon: 'grid', label: 'Browse' },
-  { section: 'schedule', icon: 'calendar', label: 'Schedule' },
-  { section: 'queue', icon: 'bookmark', label: 'My queue' },
-];
-
 interface TabBarProps {
-  /** Highlighted tab, or null when none applies (e.g. on the watch page). */
-  readonly active: SectionId | null;
-  readonly onNavigate: NavigateHandler;
+  readonly tabs: readonly Tab[];
+  /** Section of the highlighted tab, or null when none applies (e.g. on the watch page). */
+  readonly active: string | null;
+  readonly onLink: (href: string) => void;
 }
 
 /** Bottom navigation shown on phones only. */
-export function TabBar({ active, onNavigate }: TabBarProps) {
+export function TabBar({ tabs, active, onLink }: TabBarProps) {
   return (
     <nav aria-label="Tabs" className={styles.bar}>
-      {TABS.map((tab) => {
+      {tabs.map((tab) => {
         const isActive = tab.section === active;
         return (
           <a
-            key={tab.section}
-            href={homePath(tab.section)}
+            key={tab.href}
+            href={tab.href}
             className={styles.tab}
             aria-current={isActive ? 'page' : undefined}
             onClick={(event) => {
               if (!isPlainClick(event)) return;
               event.preventDefault();
-              onNavigate(tab.section);
+              onLink(tab.href);
             }}
           >
             <span className={styles.icon}>

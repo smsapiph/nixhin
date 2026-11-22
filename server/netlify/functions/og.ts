@@ -1,11 +1,12 @@
-import { buildCatalog } from '../../src/bootstrap.js';
+import { buildCatalog, buildMediaCatalog } from '../../src/bootstrap.js';
 import { loadConfig } from '../../src/config.js';
 import { createLogger } from '../../src/logger.js';
-import { cardContent, renderCard, type CardFonts } from '../../src/seo/ogCard.js';
-import { parseCardLink } from '../../src/seo/pageMeta.js';
+import { CARD_FONT_FILES, cardContent, mediaCardContent, renderCard, type CardContent, type CardFonts } from '../../src/seo/ogCard.js';
+import { parseCardLink, parseMediaCardLink } from '../../src/seo/pageMeta.js';
 
 /**
- * Branded share card for an anime link: GET /og/anime/:id.jpg?ep=&lang=  →  1200×630 JPEG.
+ * Branded share card: GET /og/anime/:id.jpg?ep=&lang=, /og/movie/:id.jpg or /og/tv/:id.jpg?s=&ep=
+ *  →  1200×630 JPEG.
  * Only crawlers request it (it is referenced from og:image), and Netlify's CDN keeps the result,
  * so each card is normally rendered once.
  */
@@ -13,6 +14,7 @@ import { parseCardLink } from '../../src/seo/pageMeta.js';
 const appConfig = loadConfig({ ...process.env, NODE_ENV: 'production' });
 const logger = createLogger('info');
 const catalog = buildCatalog(appConfig, logger);
+const media = buildMediaCatalog(appConfig, logger);
 
 const LOOKUP_TIMEOUT_MS = 4_000;
 const IMAGE_TIMEOUT_MS = 4_000;
@@ -28,8 +30,9 @@ function loadFonts(origin: string): Promise<CardFonts> {
     if (!response.ok) throw new Error(`${path}: HTTP ${response.status}`);
     return response.arrayBuffer();
   };
-  fonts ??= Promise.all([get('/og-fonts/shippori-mincho-700.ttf'), get('/og-fonts/zen-kaku-gothic-new-500.ttf')])
-    .then(([serif, sans]) => ({ serif, sans }))
+  const file = (key: keyof CardFonts) => get(`/og-fonts/${CARD_FONT_FILES[key]}`);
+  fonts ??= Promise.all([file('serif'), file('sans'), file('serifLatin'), file('sansLatin')])
+    .then(([serif, sans, serifLatin, sansLatin]) => ({ serif, sans, serifLatin, sansLatin }))
     .catch((error: unknown) => {
       fonts = null;
       throw error;
@@ -37,7 +40,7 @@ function loadFonts(origin: string): Promise<CardFonts> {
   return fonts;
 }
 
-/** Downloads an AniList image (hosts already validated by the catalog) as a data URI; null on any problem. */
+/** Downloads an AniList or TMDB image (hosts already validated by the catalogs) as a data URI; null on any problem. */
 async function imageData(url: string | null): Promise<string | null> {
   if (!url) return null;
   try {
@@ -67,21 +70,37 @@ function fallback(origin: string): Response {
   });
 }
 
+interface CardSource {
+  readonly content: CardContent;
+  readonly banner: string | null;
+  readonly poster: string | null;
+}
+
+/** What to draw for this URL, or null when it is not a card URL we serve. */
+async function cardSource(url: URL): Promise<CardSource | null> {
+  const animeLink = parseCardLink(url);
+  if (animeLink) {
+    const anime = await withTimeout(catalog.anime(animeLink.id), LOOKUP_TIMEOUT_MS);
+    return { content: cardContent(anime, animeLink), banner: anime.bannerUrl, poster: anime.imageUrlLarge ?? anime.imageUrl };
+  }
+  const mediaLink = parseMediaCardLink(url);
+  if (mediaLink && media) {
+    const detail = await withTimeout(
+      mediaLink.kind === 'movie' ? media.movie(mediaLink.id) : media.tv(mediaLink.id),
+      LOOKUP_TIMEOUT_MS,
+    );
+    return { content: mediaCardContent(detail, mediaLink), banner: detail.backdropUrl, poster: detail.imageUrlLarge ?? detail.imageUrl };
+  }
+  return null;
+}
+
 export default async (request: Request) => {
   const url = new URL(request.url);
-  const link = parseCardLink(url);
-  if (!link) return fallback(url.origin);
-
   try {
-    const [anime, cardFonts] = await Promise.all([
-      withTimeout(catalog.anime(link.id), LOOKUP_TIMEOUT_MS),
-      loadFonts(url.origin),
-    ]);
-    const [banner, poster] = await Promise.all([
-      imageData(anime.bannerUrl),
-      imageData(anime.imageUrlLarge ?? anime.imageUrl),
-    ]);
-    const card = await renderCard(cardContent(anime, link), { banner, poster }, cardFonts);
+    const [source, cardFonts] = await Promise.all([cardSource(url), loadFonts(url.origin)]);
+    if (!source) return fallback(url.origin);
+    const [banner, poster] = await Promise.all([imageData(source.banner), imageData(source.poster)]);
+    const card = await renderCard(source.content, { banner, poster }, cardFonts);
     return new Response(card, {
       headers: {
         'Content-Type': 'image/jpeg',
@@ -92,9 +111,9 @@ export default async (request: Request) => {
       },
     });
   } catch (error) {
-    logger.info('og card fallback', { id: link.id, error: error instanceof Error ? error.message : String(error) });
+    logger.info('og card fallback', { path: url.pathname, error: error instanceof Error ? error.message : String(error) });
     return fallback(url.origin);
   }
 };
 
-export const config = { path: '/og/anime/*' };
+export const config = { path: ['/og/anime/*', '/og/movie/*', '/og/tv/*'] };

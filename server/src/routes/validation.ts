@@ -1,11 +1,13 @@
 import { z } from 'zod';
 import {
+  MOVIE_LISTS,
   SEARCH_FORMATS,
   SEARCH_MIN_YEAR,
   SEARCH_SEASONS,
   SEARCH_SORTS,
   SEARCH_STATUSES,
   TOP_FILTERS,
+  TV_LISTS,
 } from '../../../shared/api.js';
 import { HttpError } from '../errors.js';
 
@@ -81,3 +83,39 @@ export function parseInput<S extends z.ZodType>(schema: S, input: unknown): z.in
   const field = issue?.path.join('.') || 'input';
   throw new HttpError(400, 'BAD_REQUEST', `Invalid ${field}: ${issue?.message ?? 'invalid value'}`);
 }
+
+/* Movies & TV */
+
+export const MovieListParams = z.object({ list: z.enum(MOVIE_LISTS) });
+export const TvListParams = z.object({ list: z.enum(TV_LISTS) });
+
+export const MediaPageQuery = z.object({ page });
+
+export const DiscoverQuery = z.object({
+  genre: intInRange(1, 1_000_000).optional(),
+  page,
+});
+
+export const MediaSearchQuery = z.object({
+  q: z
+    .string()
+    .trim()
+    .min(1, 'must not be empty')
+    .max(100, 'must be at most 100 characters')
+    .regex(/^[^\p{Cc}]*$/u, 'contains invalid characters'),
+  page,
+});
+
+export const SeasonParams = z.object({
+  id: intInRange(1, 100_000_000),
+  season: z
+    .string()
+    .regex(/^\d{1,3}$/, 'must be a season number')
+    .transform(Number)
+    .pipe(z.number().int().min(0).max(500)),
+});
+
+export const TvStreamQuery = z.object({
+  season: intInRange(0, 500),
+  episode: intInRange(1, 5000),
+});

@@ -1,25 +1,24 @@
 import { useEffect, useState } from 'react';
-import type { SectionId } from '../types';
-
-/** Home-page sections in document order (the hero has no anchor; above them means "top"). */
-const SECTIONS: readonly SectionId[] = ['continue', 'trending', 'season', 'queue', 'browse', 'schedule'];
+import { TOP_SECTIONS } from '../components/navigation';
 
 /**
- * Scroll spy: reports which home section crosses a line just above the middle of the viewport.
- * Returns 'top' while the hero is in view. Inactive (returns null) when `enabled` is false.
+ * Scroll spy: reports which of `sections` (home-page anchors, in page order) crosses a line just
+ * above the middle of the viewport. Returns 'top' while the hero is in view, null when disabled.
  */
-export function useActiveSection(enabled: boolean): SectionId | null {
-  const [active, setActive] = useState<SectionId>('top');
+export function useActiveSection(enabled: boolean, sections: readonly string[]): string | null {
+  const [active, setActive] = useState('top');
+  const key = sections.join(',');
 
   useEffect(() => {
     if (!enabled) return;
-    const elements = SECTIONS.map((id) => document.getElementById(id)).filter((el) => el !== null);
+    const ids = key.split(',');
+    const elements = ids.map((id) => document.getElementById(id)).filter((el) => el !== null);
     const first = elements[0];
     if (!first) return;
 
     const crossing = new Set<string>();
     const update = () => {
-      const current = SECTIONS.find((id) => crossing.has(id));
+      const current = ids.find((id) => crossing.has(id));
       if (current) setActive(current);
       else if (first.getBoundingClientRect().top > window.innerHeight * 0.4) setActive('top');
     };
@@ -37,12 +36,12 @@ export function useActiveSection(enabled: boolean): SectionId | null {
     );
     elements.forEach((el) => observer.observe(el));
     return () => observer.disconnect();
-  }, [enabled]);
+  }, [enabled, key]);
 
   return enabled ? active : null;
 }
 
-/** The tab that represents a section: the top-of-page carousels all belong to Home. */
-export function tabForSection(section: SectionId | null): SectionId | null {
-  return section === 'continue' || section === 'trending' || section === 'season' ? 'top' : section;
+/** The tab that represents a section: the rows near the top all belong to Home. */
+export function tabForSection(section: string | null): string | null {
+  return section !== null && TOP_SECTIONS.has(section) ? 'top' : section;
 }

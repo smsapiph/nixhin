@@ -1,16 +1,26 @@
-import { buildCatalog } from '../../src/bootstrap.js';
+import { buildCatalog, buildMediaCatalog } from '../../src/bootstrap.js';
 import { loadConfig } from '../../src/config.js';
 import { createLogger } from '../../src/logger.js';
-import { animeMeta, injectMeta, isCrawler, parseAnimeLink, renderMetaTags } from '../../src/seo/pageMeta.js';
+import {
+  animeMeta,
+  injectMeta,
+  isCrawler,
+  mediaMeta,
+  parseAnimeLink,
+  parseMediaLink,
+  renderMetaTags,
+  type PageMeta,
+} from '../../src/seo/pageMeta.js';
 
 /**
- * Serves the SPA shell for `/anime/*`, with per-anime link-preview tags for crawlers
+ * Serves the SPA shell for `/anime/*`, `/movie/*` and `/tv/*`, with per-title link-preview tags for crawlers
  * (e.g. "Watch Black Clover Episode 5" + its banner). Browsers get the page unchanged.
  */
 
 const appConfig = loadConfig({ ...process.env, NODE_ENV: 'production' });
 const logger = createLogger('info');
 const catalog = buildCatalog(appConfig, logger);
+const media = buildMediaCatalog(appConfig, logger);
 
 /** Crawlers give up after a few seconds; better default tags than no preview. */
 const LOOKUP_TIMEOUT_MS = 4_000;
@@ -61,18 +71,33 @@ export default async (request: Request) => {
   out.set('Cache-Control', 'public, max-age=0, must-revalidate');
   out.set('Vary', 'User-Agent');
 
-  const link = parseAnimeLink(url);
-  if (!link || !isCrawler(request.headers.get('user-agent'))) return new Response(html, { headers: out });
+  if (!isCrawler(request.headers.get('user-agent'))) return new Response(html, { headers: out });
 
   try {
-    const anime = await withTimeout(catalog.anime(link.id), LOOKUP_TIMEOUT_MS);
-    const siteUrl = (process.env.URL ?? url.origin).replace(/\/+$/, '');
-    return new Response(injectMeta(html, renderMetaTags(animeMeta(anime, link, siteUrl))), { headers: out });
+    const meta = await pageMeta(url);
+    if (!meta) return new Response(html, { headers: out });
+    return new Response(injectMeta(html, renderMetaTags(meta)), { headers: out });
   } catch (error) {
-    // Unknown id, AniList down or slow: fall back to the site-wide preview.
-    logger.info('page meta fallback', { id: link.id, error: error instanceof Error ? error.message : String(error) });
+    // Unknown id, upstream down or slow: fall back to the site-wide preview.
+    logger.info('page meta fallback', { path: url.pathname, error: error instanceof Error ? error.message : String(error) });
     return new Response(html, { headers: out });
   }
 };
 
-export const config = { path: '/anime/*' };
+/** Link-preview tags for an anime, movie or TV page; null for other paths. */
+async function pageMeta(url: URL): Promise<PageMeta | null> {
+  const siteUrl = (process.env.URL ?? url.origin).replace(/\/+$/, '');
+  const animeLink = parseAnimeLink(url);
+  if (animeLink) return animeMeta(await withTimeout(catalog.anime(animeLink.id), LOOKUP_TIMEOUT_MS), animeLink, siteUrl);
+  const mediaLink = parseMediaLink(url);
+  if (mediaLink && media) {
+    const detail = await withTimeout(
+      mediaLink.kind === 'movie' ? media.movie(mediaLink.id) : media.tv(mediaLink.id),
+      LOOKUP_TIMEOUT_MS,
+    );
+    return mediaMeta(detail, mediaLink, siteUrl);
+  }
+  return null;
+}
+
+export const config = { path: ['/anime/*', '/movie/*', '/tv/*'] };

@@ -1,6 +1,20 @@
 import { describe, expect, it } from 'vitest';
-import type { AnimeDetail } from '../../../shared/api.js';
-import { META_END, META_START, animeMeta, cardPath, injectMeta, isCrawler, parseAnimeLink, parseCardLink, renderMetaTags } from './pageMeta.js';
+import type { AnimeDetail, MediaDetail } from '../../../shared/api.js';
+import {
+  META_END,
+  META_START,
+  animeMeta,
+  cardPath,
+  injectMeta,
+  isCrawler,
+  mediaCardPath,
+  mediaMeta,
+  parseAnimeLink,
+  parseCardLink,
+  parseMediaCardLink,
+  parseMediaLink,
+  renderMetaTags,
+} from './pageMeta.js';
 
 const anime: AnimeDetail = {
   id: 108632,
@@ -108,5 +122,27 @@ describe('renderMetaTags / injectMeta', () => {
     expect(out).toContain('<meta charset="utf-8" />');
     expect(out).toContain('<link rel="icon" />');
     expect(injectMeta('<head></head>', tags)).toBe('<head></head>');
+  });
+});
+
+describe('media links', () => {
+  it('parses movie and TV links, keeping a season only together with an episode', () => {
+    expect(parseMediaLink(new URL('https://x.test/movie/693134'))).toEqual({ kind: 'movie', id: 693134, season: null, episode: null });
+    expect(parseMediaLink(new URL('https://x.test/tv/126308?s=1&ep=4'))).toEqual({ kind: 'tv', id: 126308, season: 1, episode: 4 });
+    expect(parseMediaLink(new URL('https://x.test/tv/126308?s=1'))).toEqual({ kind: 'tv', id: 126308, season: null, episode: null });
+    expect(parseMediaLink(new URL('https://x.test/tv/abc'))).toBeNull();
+    expect(parseMediaCardLink(new URL('https://x.test/og/tv/126308.jpg?s=2&ep=1'))).toEqual({ kind: 'tv', id: 126308, season: 2, episode: 1 });
+    expect(mediaCardPath({ kind: 'tv', id: 5, season: 1, episode: 2 })).toBe('/og/tv/5.jpg?s=1&ep=2');
+  });
+
+  it('builds episode titles and the card URL', () => {
+    const detail = { id: 126308, title: 'Shōgun', year: 2024, synopsis: 'Japan, 1600.' } as unknown as MediaDetail;
+    const meta = mediaMeta(detail, { kind: 'tv', id: 126308, season: 1, episode: 4 }, 'https://nixhin.test');
+    expect(meta.title).toBe('Watch Shōgun S1 Episode 4 · Nixhin');
+    expect(meta.url).toBe('https://nixhin.test/tv/126308?s=1&ep=4');
+    expect(meta.image).toBe('https://nixhin.test/og/tv/126308.jpg?s=1&ep=4');
+    expect(mediaMeta(detail, { kind: 'movie', id: 126308, season: null, episode: null }, 'https://n.test').title).toBe(
+      'Watch Shōgun (2024) · Nixhin',
+    );
   });
 });

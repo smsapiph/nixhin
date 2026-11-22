@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import type { AnimeRef } from '../../../shared/api';
+import { useNavigate } from 'react-router';
 import { useSeasonNow, useTopAnime } from '../../api/queries';
 import { pluralLocalDay } from '../../lib/broadcast';
 import { formatScore, genreLine } from '../../lib/format';
@@ -10,12 +10,14 @@ import { ShowCard } from '../ShowCard';
 import { Muted, ScrollRow, SectionHeader, TextLink, TitleLines } from '../ui';
 import { Backup } from './Backup';
 import styles from './HomeSections.module.css';
-import { homePath, isPlainClick } from '../../routes';
+import { homePath, isPlainClick, titlePath } from '../../routes';
+import { itemKey, kindOf, type QueueItem } from '../../lib/queueStorage';
 
 export type OpenHandler = (id: number) => void;
 
 interface SectionProps {
-  readonly id: SectionId;
+  /** Anchor id (`/#trending`, `/movies#popular`, …). */
+  readonly id: string;
   readonly eyebrow: string;
   readonly title: string;
   readonly aside?: ReactNode;
@@ -49,7 +51,11 @@ function SectionLink({ to, label, onNavigate }: { to: SectionId; label: string; 
   );
 }
 
-export function MyQueue({ items, onOpen }: { readonly items: readonly AnimeRef[]; readonly onOpen: OpenHandler }) {
+const KIND_LABELS = { movie: 'Movie', tv: 'TV show' } as const;
+
+/** The viewer's saved titles. Movies and TV shows (saved from their modes) say what they are. */
+export function MyQueue({ items }: { readonly items: readonly QueueItem[] }) {
+  const navigate = useNavigate();
   return (
     <HomeSection
       id="queue"
@@ -61,11 +67,18 @@ export function MyQueue({ items, onOpen }: { readonly items: readonly AnimeRef[]
         <EmptyNotice>Nothing here yet. Use “Add to queue” on any show to save it for later.</EmptyNotice>
       ) : (
         <ScrollRow>
-          {items.map((anime) => (
-            <ShowCard key={anime.id} anime={anime} onOpen={onOpen}>
-              <span className={styles.cardTitle}>{anime.title}</span>
-            </ShowCard>
-          ))}
+          {items.map((item) => {
+            const kind = kindOf(item);
+            return (
+              <ShowCard key={itemKey(kind, item.id)} anime={item} onOpen={() => navigate(titlePath(kind, item.id))}>
+                {item.kind ? (
+                  <TitleLines title={item.title} subtitle={KIND_LABELS[item.kind]} />
+                ) : (
+                  <span className={styles.cardTitle}>{item.title}</span>
+                )}
+              </ShowCard>
+            );
+          })}
         </ScrollRow>
       )}
       <Backup />

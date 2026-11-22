@@ -148,3 +148,105 @@ export type ApiErrorCode =
   | 'UPSTREAM_ERROR'
   | 'UPSTREAM_UNAVAILABLE'
   | 'INTERNAL_ERROR';
+
+/* ------------------------------------------------------------------ Movies & TV shows (TMDB) */
+
+export type MediaKind = 'movie' | 'tv';
+
+/** Movie lists shown on the Movies home (`/api/movie/list/:list`). */
+export const MOVIE_LISTS = ['trending', 'popular', 'now_playing', 'upcoming'] as const;
+export type MovieList = (typeof MOVIE_LISTS)[number];
+/** TV lists shown on the TV home (`/api/tv/list/:list`). */
+export const TV_LISTS = ['trending', 'popular', 'on_the_air', 'airing_today'] as const;
+export type TvList = (typeof TV_LISTS)[number];
+
+/** Whether movies & TV are available, and which can play episodes/films on the server's provider. */
+export interface MediaConfig {
+  /** True when the server has a TMDB token. Without it the site is anime-only. */
+  readonly enabled: boolean;
+  readonly moviePlayback: boolean;
+  readonly tvPlayback: boolean;
+}
+
+/** A movie or TV show card. `id` is the TMDB id (its own id space, separate from anime). */
+export interface MediaSummary extends AnimeRef {
+  readonly kind: MediaKind;
+  /** Title in its original language when it differs (e.g. 将軍), else null. */
+  readonly originalTitle: string | null;
+  readonly imageUrlLarge: string | null;
+  /** Wide still for heroes and share cards. */
+  readonly backdropUrl: string | null;
+  /** First release (movie) or first air date (TV), ISO date. */
+  readonly releaseDate: string | null;
+  readonly year: number | null;
+  /** Average user score on a 0–10 scale; null with too few votes. */
+  readonly score: number | null;
+  readonly genres: readonly string[];
+  readonly synopsis: string | null;
+}
+
+export interface CastMember {
+  readonly name: string;
+  readonly character: string | null;
+  readonly imageUrl: string | null;
+}
+
+export interface TvSeason {
+  readonly number: number;
+  readonly name: string;
+  readonly episodeCount: number;
+  readonly year: number | null;
+}
+
+export interface MediaDetail extends MediaSummary {
+  readonly tagline: string | null;
+  /** e.g. "Released", "Returning series". */
+  readonly status: string | null;
+  /** Minutes: the film's length, or a typical episode. */
+  readonly runtime: number | null;
+  /** Age rating, Philippine first then US, e.g. "PG-13". */
+  readonly rating: string | null;
+  /** Studios (movie) or networks (TV). */
+  readonly companies: readonly string[];
+  /** Director(s) of a movie, creator(s) of a show. */
+  readonly makers: readonly string[];
+  readonly cast: readonly CastMember[];
+  readonly trailer: Trailer | null;
+  readonly imdbId: string | null;
+  readonly recommendations: readonly MediaSummary[];
+  /** Movie only: the series it belongs to ("Dune Collection"). */
+  readonly collection: { readonly id: number; readonly name: string } | null;
+  /** TV only: regular seasons, oldest first (specials last). Empty for movies. */
+  readonly seasons: readonly TvSeason[];
+  /** TV only: the latest aired episode, which bounds playback. */
+  readonly lastAired: { readonly season: number; readonly episode: number } | null;
+}
+
+export interface TvEpisode {
+  readonly number: number;
+  readonly title: string | null;
+  /** ISO date string. */
+  readonly aired: string | null;
+  readonly runtime: number | null;
+  readonly overview: string | null;
+}
+
+/** A movie collection, in release order. */
+export interface MediaCollection {
+  readonly id: number;
+  readonly name: string;
+  readonly parts: readonly MediaSummary[];
+}
+
+/** A playable movie or TV episode on the configured provider (token as in `StreamSource`). */
+export interface MediaStreamSource {
+  readonly season: number | null;
+  readonly episode: number | null;
+  readonly token: string;
+}
+
+/** A genre with its TMDB id (the value used to filter). */
+export interface MediaGenre {
+  readonly id: number;
+  readonly name: string;
+}

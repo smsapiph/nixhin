@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import type { AnimeDetail } from '../../../shared/api';
+import type { Trailer } from '../../../shared/api';
 import { isTv } from '../../lib/tvDevice';
 import { Icon } from '../Icon';
 import { TvFrameFocus } from './TvFrameFocus';
@@ -8,11 +8,20 @@ import styles from './TrailerPlayer.module.css';
 /** Strict check before building an embed URL, even though the API already validates it. */
 const YOUTUBE_ID = /^[A-Za-z0-9_-]{11}$/;
 
+/** What the trailer player needs: an anime, or a movie/show with its backdrop as `bannerUrl`. */
+export interface TrailerSource {
+  readonly title: string;
+  readonly trailer: Trailer | null;
+  readonly bannerUrl: string | null;
+  readonly imageUrlLarge: string | null;
+  readonly imageUrl: string | null;
+}
+
 /**
  * Click-to-load YouTube trailer. The iframe (and YouTube's scripts/cookies) only load
  * after the viewer asks for it, using the privacy-enhanced youtube-nocookie domain.
  */
-export function TrailerPlayer({ anime }: { readonly anime: AnimeDetail }) {
+export function TrailerPlayer({ anime }: { readonly anime: TrailerSource }) {
   const [playing, setPlaying] = useState(false);
   const frameRef = useRef<HTMLIFrameElement>(null);
   const youtubeId = anime.trailer && YOUTUBE_ID.test(anime.trailer.youtubeId) ? anime.trailer.youtubeId : null;

@@ -4,6 +4,12 @@ import type {
   AnimeSummary,
   Episode,
   Genre,
+  MediaCollection,
+  MediaDetail,
+  MediaGenre,
+  MediaKind,
+  MediaSummary,
+  MovieList,
   Page,
   SearchFormat,
   SearchSeason,
@@ -11,6 +17,8 @@ import type {
   SearchStatus,
   SeasonEntry,
   TopFilter,
+  TvEpisode,
+  TvList,
 } from '../../shared/api.js';
 
 export interface SearchParams {
@@ -42,4 +50,17 @@ export interface AnimeCatalog {
   seasons(id: number): Promise<readonly SeasonEntry[]>;
   genres(): Promise<readonly Genre[]>;
   schedule(): Promise<readonly AnimeSummary[]>;
+}
+
+/** Movies and TV shows (TMDB). Optional: without a token the site stays anime-only. */
+export interface MediaCatalog {
+  movieList(list: MovieList, page: number): Promise<Page<MediaSummary>>;
+  tvList(list: TvList, page: number): Promise<Page<MediaSummary>>;
+  discover(kind: MediaKind, genreId: number | undefined, page: number): Promise<Page<MediaSummary>>;
+  genres(kind: MediaKind): Promise<readonly MediaGenre[]>;
+  search(kind: MediaKind, query: string, page: number): Promise<Page<MediaSummary>>;
+  movie(id: number): Promise<MediaDetail>;
+  tv(id: number): Promise<MediaDetail>;
+  tvSeason(id: number, season: number): Promise<readonly TvEpisode[]>;
+  collection(id: number): Promise<MediaCollection>;
 }

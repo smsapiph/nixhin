@@ -8,17 +8,22 @@ import type { ContentfulStatusCode } from 'hono/utils/http-status';
 import type { ApiErrorBody, ApiErrorCode } from '../../shared/api.js';
 import type { Config } from './config.js';
 import { HttpError, UpstreamError } from './errors.js';
-import type { AnimeCatalog } from './catalog.js';
+import type { AnimeCatalog, MediaCatalog } from './catalog.js';
 import { silentLogger, type Logger } from './logger.js';
 import { clientIp, rateLimit } from './middleware/rateLimit.js';
 import { apiRoutes } from './routes/api.js';
+import { mediaRoutes } from './routes/media.js';
 import { EmbedStreams } from './stream/embed.js';
+import { MediaEmbedStreams } from './stream/mediaEmbed.js';
 
 export interface AppDeps {
   readonly config: Pick<Config, 'ALLOWED_ORIGINS' | 'TRUST_PROXY' | 'RATE_LIMIT_PER_MINUTE'>;
   readonly catalog: AnimeCatalog;
   /** Episode playback; disabled when omitted. */
   readonly streams?: EmbedStreams;
+  /** Movies & TV (TMDB); anime-only when omitted. */
+  readonly media?: MediaCatalog | null;
+  readonly mediaStreams?: MediaEmbedStreams;
   readonly logger?: Logger;
   readonly now?: () => number;
 }
@@ -35,6 +40,8 @@ export function createApp({
   config,
   catalog,
   streams = new EmbedStreams({ template: undefined, languages: [] }),
+  media = null,
+  mediaStreams = new MediaEmbedStreams({ movieTemplate: undefined, tvTemplate: undefined }),
   logger = silentLogger,
   now = Date.now,
 }: AppDeps): Hono {
@@ -92,6 +99,7 @@ export function createApp({
   });
 
   app.route('/api', apiRoutes(catalog, streams));
+  app.route('/api', mediaRoutes(media, mediaStreams));
 
   app.notFound((c) => errorResponse(c, 404, 'NOT_FOUND', 'Route not found'));
 
@@ -109,14 +117,14 @@ export function createApp({
       });
       switch (error.kind) {
         case 'not_found':
-          return errorResponse(c, 404, 'NOT_FOUND', 'That anime could not be found.');
+          return errorResponse(c, 404, 'NOT_FOUND', 'That title could not be found.');
         case 'bad_request':
           return errorResponse(c, 400, 'BAD_REQUEST', 'The request was not accepted. Check the search or genre.');
         case 'unavailable':
           c.header('Retry-After', '5');
-          return errorResponse(c, 503, 'UPSTREAM_UNAVAILABLE', 'The anime database is busy. Try again shortly.');
+          return errorResponse(c, 503, 'UPSTREAM_UNAVAILABLE', 'The catalog is busy. Try again shortly.');
         case 'bad_response':
-          return errorResponse(c, 502, 'UPSTREAM_ERROR', 'The anime database returned an unexpected response.');
+          return errorResponse(c, 502, 'UPSTREAM_ERROR', 'The catalog returned an unexpected response.');
       }
     }
 

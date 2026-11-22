@@ -329,7 +329,7 @@ function Details({ anime, queued, onToggleQueue, playable, shareUrl, shareTitle 
  * Shares the page with the system share sheet where there is one (phones), else copies the link.
  * Link previews show the episode, so the shared URL keeps ?ep= and ?lang=.
  */
-function ShareButton({ path, title }: { readonly path: string; readonly title: string }) {
+export function ShareButton({ path, title }: { readonly path: string; readonly title: string }) {
   const [status, setStatus] = useState<'idle' | 'copied' | 'failed'>('idle');
 
   useEffect(() => {

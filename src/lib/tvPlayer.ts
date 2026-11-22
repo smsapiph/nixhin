@@ -121,3 +121,7 @@ export function takePlayerRequest(key: string): boolean {
 
 /** Names an episode's player for `requestPlayerControl`. */
 export const episodeControlKey = (episode: number, language: string): string => `episode:${episode}:${language}`;
+
+/** Names a movie's or TV episode's player for `requestPlayerControl`. */
+export const mediaControlKey = (kind: 'movie' | 'tv', season: number | null, episode: number | null): string =>
+  kind === 'movie' ? 'movie' : `tv:${season ?? 0}:${episode ?? 0}`;
