@@ -3,6 +3,7 @@ import { toLocalSlot, weekdayIndex } from './broadcast';
 import { formatEpisodes, formatScore, genreLine } from './format';
 import { isDevtoolsShortcut, looksLikeDevtoolsOpen } from './devtools';
 import { parseQueue } from './queueStorage';
+import { imageSrc } from './images';
 
 const NOW = new Date('2026-11-20T12:00:00Z'); // a Friday
 
@@ -102,5 +103,13 @@ describe('looksLikeDevtoolsOpen', () => {
     expect(looksLikeDevtoolsOpen({ outerWidth: 1440, outerHeight: 900, innerWidth: 900, innerHeight: 800 })).toBe(true);
     expect(looksLikeDevtoolsOpen({ outerWidth: 1440, outerHeight: 900, innerWidth: 1440, innerHeight: 450 })).toBe(true);
     expect(looksLikeDevtoolsOpen({ outerWidth: 0, outerHeight: 0, innerWidth: 1440, innerHeight: 800 })).toBe(false);
+  });
+});
+
+describe('imageSrc', () => {
+  it('loads TMDB images through this site and leaves other hosts alone', () => {
+    expect(imageSrc('https://image.tmdb.org/t/p/w342/abc.jpg')).toBe('/img/tmdb/w342/abc.jpg');
+    expect(imageSrc('https://s4.anilist.co/file/x.jpg')).toBe('https://s4.anilist.co/file/x.jpg');
+    expect(imageSrc(null)).toBeNull();
   });
 });

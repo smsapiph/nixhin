@@ -36,6 +36,8 @@ export default defineConfig({
     // Same-origin `/api` in dev: no CORS round-trips, and the browser never talks to AniList directly.
     proxy: {
       '/api': { target: apiTarget, changeOrigin: false },
+      // Same as the /img/tmdb/* rule in netlify.toml (see src/lib/images.ts).
+      '/img/tmdb': { target: 'https://image.tmdb.org', changeOrigin: true, rewrite: (path) => path.replace(/^\/img\/tmdb/, '/t/p') },
     },
   },
   preview: {

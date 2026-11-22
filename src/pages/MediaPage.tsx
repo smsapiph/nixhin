@@ -22,6 +22,7 @@ import { mediaPath, tvPath } from '../routes';
 import { ShareButton } from './AnimePage';
 import styles from './AnimePage.module.css';
 import own from './MediaPage.module.css';
+import { imageSrc } from '../lib/images';
 
 interface MediaPageProps {
   readonly kind: MediaKind;
@@ -371,7 +372,7 @@ function CastPanel({
           {detail.cast.slice(0, 8).map((person) => (
             <li key={`${person.name}-${person.character ?? ''}`} className={own.person}>
               {person.imageUrl ? (
-                <img className={own.avatar} src={person.imageUrl} alt="" loading="lazy" referrerPolicy="no-referrer" />
+                <img className={own.avatar} src={imageSrc(person.imageUrl)} alt="" loading="lazy" referrerPolicy="no-referrer" />
               ) : (
                 <span className={own.avatar} aria-hidden="true" />
               )}

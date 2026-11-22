@@ -4,6 +4,7 @@ import { isTv } from '../../lib/tvDevice';
 import { Icon } from '../Icon';
 import { TvFrameFocus } from './TvFrameFocus';
 import styles from './TrailerPlayer.module.css';
+import { imageSrc } from '../../lib/images';
 
 /** Strict check before building an embed URL, even though the API already validates it. */
 const YOUTUBE_ID = /^[A-Za-z0-9_-]{11}$/;
@@ -54,7 +55,7 @@ export function TrailerPlayer({ anime }: { readonly anime: TrailerSource }) {
       {still && (
         <img
           className={dimmed ? styles.stillDimmed : styles.still}
-          src={still}
+          src={imageSrc(still)}
           alt=""
           referrerPolicy="no-referrer"
         />
