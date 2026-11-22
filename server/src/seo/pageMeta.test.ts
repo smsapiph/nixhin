@@ -57,11 +57,11 @@ describe('parseAnimeLink', () => {
 
   it('round-trips share-card paths', () => {
     const link = { id: 97940, episode: 5, language: 'dub' };
-    expect(cardPath(link)).toBe('/og/anime/97940.png?ep=5&lang=dub');
+    expect(cardPath(link)).toBe('/og/anime/97940.jpg?ep=5&lang=dub');
     expect(parseCardLink(new URL(SITE + cardPath(link)))).toEqual(link);
     // Language without an episode is not shown on the card, so it is left out of the URL.
-    expect(cardPath({ id: 1, episode: null, language: 'dub' })).toBe('/og/anime/1.png');
-    expect(parseCardLink(new URL(`${SITE}/og/anime/1.jpg`))).toBeNull();
+    expect(cardPath({ id: 1, episode: null, language: 'dub' })).toBe('/og/anime/1.jpg');
+    expect(parseCardLink(new URL(`${SITE}/og/anime/1.png`))).toBeNull();
   });
 });
 
@@ -71,7 +71,7 @@ describe('animeMeta', () => {
     expect(meta.title).toBe('Watch Black Clover 2nd Season Episode 5 (English dub) · Nixhin');
     expect(meta.description.startsWith('Episode 5 of Black Clover 2nd Season, English dub.')).toBe(true);
     expect(meta.url).toBe(`${SITE}/anime/108632?ep=5&lang=dub`);
-    expect(meta.image).toBe(`${SITE}/og/anime/108632.png?ep=5&lang=dub`);
+    expect(meta.image).toBe(`${SITE}/og/anime/108632.jpg?ep=5&lang=dub`);
     expect(meta.imageAlt).toBe('Watch Black Clover 2nd Season Episode 5 (English dub)');
     expect(meta.type).toBe('video.episode');
   });
@@ -79,7 +79,7 @@ describe('animeMeta', () => {
   it('describes the show without an episode', () => {
     const meta = animeMeta(anime, { id: anime.id, episode: null, language: null }, SITE);
     expect(meta.title).toBe('Watch Black Clover 2nd Season · Nixhin');
-    expect(meta.image).toBe(`${SITE}/og/anime/108632.png`);
+    expect(meta.image).toBe(`${SITE}/og/anime/108632.jpg`);
     expect(meta.type).toBe('video.tv_show');
   });
 

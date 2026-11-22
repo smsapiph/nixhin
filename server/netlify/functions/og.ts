@@ -5,7 +5,7 @@ import { cardContent, renderCard, type CardFonts } from '../../src/seo/ogCard.js
 import { parseCardLink } from '../../src/seo/pageMeta.js';
 
 /**
- * Branded share card for an anime link: GET /og/anime/:id.png?ep=&lang=  →  1200×630 PNG.
+ * Branded share card for an anime link: GET /og/anime/:id.jpg?ep=&lang=  →  1200×630 JPEG.
  * Only crawlers request it (it is referenced from og:image), and Netlify's CDN keeps the result,
  * so each card is normally rendered once.
  */
@@ -81,10 +81,10 @@ export default async (request: Request) => {
       imageData(anime.bannerUrl),
       imageData(anime.imageUrlLarge ?? anime.imageUrl),
     ]);
-    const png = await renderCard(cardContent(anime, link), { banner, poster }, cardFonts);
-    return new Response(png, {
+    const card = await renderCard(cardContent(anime, link), { banner, poster }, cardFonts);
+    return new Response(card, {
       headers: {
-        'Content-Type': 'image/png',
+        'Content-Type': 'image/jpeg',
         'Cache-Control': 'public, max-age=86400',
         // Netlify's CDN keeps the render for a week (shared across edges), refreshing in the background after that.
         'Netlify-CDN-Cache-Control': 'public, durable, s-maxage=604800, stale-while-revalidate=86400',
