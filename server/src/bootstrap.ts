@@ -8,8 +8,8 @@ import { TtlCache } from './lib/ttlCache.js';
 import type { Logger } from './logger.js';
 import { EmbedStreams } from './stream/embed.js';
 
-/** Wires the real AniList catalog and stream provider into the app. Shared by the Node server and Netlify. */
-export function buildApp(config: Config, logger: Logger): Hono {
+/** The real AniList catalog with its upstream throttle and cache. */
+export function buildCatalog(config: Config, logger: Logger): AniListCatalog {
   const scheduler = new RequestScheduler({
     rules: [
       { limit: 2, windowMs: 1_000 },
@@ -25,9 +25,14 @@ export function buildApp(config: Config, logger: Logger): Hono {
     cache: new TtlCache<unknown>(1_000),
   });
 
-  const catalog = new AniListCatalog(client, {
+  return new AniListCatalog(client, {
     onInvalidItem: (error) => logger.debug('skipped invalid upstream item', { issues: error.issues.slice(0, 3) }),
   });
+}
+
+/** Wires the real AniList catalog and stream provider into the app. Shared by the Node server and Netlify. */
+export function buildApp(config: Config, logger: Logger): Hono {
+  const catalog = buildCatalog(config, logger);
 
   const streams = new EmbedStreams({ template: config.STREAM_EMBED_TEMPLATE, languages: config.STREAM_LANGUAGES });
   if (streams.config().enabled) {

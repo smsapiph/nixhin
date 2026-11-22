@@ -3,9 +3,34 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-    <meta name="description" content="Nixhin — watch anime free. No account needed." />
     <meta name="theme-color" content="#F6F4EF" />
+    <!--
+      Link-preview tags. On /anime/* pages a Netlify Function swaps this whole block for the
+      anime's own title, episode and banner (server/src/seo/pageMeta.ts); keep the markers.
+      %SITE_URL% is filled in at build time (vite.config.ts).
+    -->
+    <!-- page-meta -->
     <title>Nixhin — watch anime free</title>
+    <meta name="description" content="Nixhin — watch anime free. No account needed." />
+    <link rel="canonical" href="%SITE_URL%/" />
+    <meta property="og:site_name" content="Nixhin" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Nixhin — watch anime free" />
+    <meta property="og:description" content="No sign-up. Just pick a show and press play." />
+    <meta property="og:url" content="%SITE_URL%/" />
+    <meta property="og:image" content="%SITE_URL%/og-image.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="Nixhin — watch anime free" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Nixhin — watch anime free" />
+    <meta name="twitter:description" content="No sign-up. Just pick a show and press play." />
+    <meta name="twitter:image" content="%SITE_URL%/og-image.png" />
+    <!-- /page-meta -->
+    <link rel="icon" href="/favicon.ico" sizes="48x48" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/site.webmanifest" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link

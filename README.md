@@ -136,6 +136,18 @@ and rate-limits on Netlify's `context.ip`.
 - Cache, rate limiter and upstream throttle are per function instance, so under load several warm instances can
   together exceed AniList's 30 req/min (they back off on 429). Use a shared store if that becomes a problem.
 
+### Link previews (Open Graph)
+
+- The home page uses the static tags in `index.html` and `public/og-image.png`. Crawlers need absolute URLs, so
+  `%SITE_URL%` is filled in at build time from Netlify's `URL` (or `SITE_URL` if you set it).
+- `/anime/*` is served by a second function (`server/netlify/functions/page.ts`). For link-preview bots and
+  search crawlers it replaces the `<!-- page-meta -->` block with the anime's title, episode, language and banner
+  (e.g. *Watch Black Clover Episode 5 (English dub) · Nixhin*); see `server/src/seo/pageMeta.ts`. Browsers get
+  `index.html` unchanged, so normal visits cost no extra AniList call. If AniList is slow (>4 s) or the id is
+  unknown, the site-wide preview is used.
+- Facebook/Messenger cache previews; use the [Sharing Debugger](https://developers.facebook.com/tools/debug/)
+  to refresh one after a change.
+
 ## Before deploying
 
 - Serve the frontend with a Content-Security-Policy, e.g.
