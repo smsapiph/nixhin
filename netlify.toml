@@ -17,6 +17,15 @@
   external_node_modules = ["@resvg/resvg-js"]
   included_files = ["server/node_modules/@resvg/**"]
 
+# TMDB images through this site: some internet providers block image.tmdb.org, which left movie and TV
+# posters blank. The browser asks for /img/tmdb/w342/abc.jpg and Netlify fetches it from TMDB (src/lib/images.ts).
+# Must come before the SPA fallback below.
+[[redirects]]
+  from = "/img/tmdb/*"
+  to = "https://image.tmdb.org/t/p/:splat"
+  status = 200
+  force = true
+
 # SPA fallback: serve index.html for any path that is not a file. /api/* never reaches this,
 # because a function with a configured path runs before redirects.
 [[redirects]]

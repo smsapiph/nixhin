@@ -1,5 +1,6 @@
 import { useState, type ReactNode } from 'react';
 import styles from './Poster.module.css';
+import { imageSrc } from '../lib/images';
 
 type Shape = 'poster' | 'wide' | 'custom';
 
@@ -22,6 +23,7 @@ interface PosterProps {
 export function Poster({ src, title, shape = 'poster', priority = false, className, children }: PosterProps) {
   const [failedSrc, setFailedSrc] = useState<string | null>(null);
   const showImage = src !== null && src !== failedSrc;
+  const url = imageSrc(src);
   const classes = [styles.frame, shape !== 'custom' && styles[shape], className].filter(Boolean).join(' ');
 
   return (
@@ -29,7 +31,7 @@ export function Poster({ src, title, shape = 'poster', priority = false, classNa
       {showImage ? (
         <img
           className={styles.image}
-          src={src}
+          src={url ?? undefined}
           alt=""
           loading={priority ? 'eager' : 'lazy'}
           decoding="async"

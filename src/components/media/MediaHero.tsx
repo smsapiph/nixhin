@@ -8,6 +8,7 @@ import { Icon } from '../Icon';
 import { AccentDot, Eyebrow, PillButton } from '../ui';
 import styles from '../home/Hero.module.css';
 import { heroLine } from './mediaFormat';
+import { imageSrc } from '../../lib/images';
 
 const FEATURED_COUNT = 5;
 const ROTATE_MS = 8000;
@@ -108,11 +109,11 @@ function Carousel({ featured, eyebrow, showRemoteHint, isQueued, onToggleQueue, 
 
       <div className={`${styles.artBox} ${styles.art}`}>
         {item.backdropUrl ? (
-          <img key={`bg-${item.backdropUrl}`} className={styles.banner} src={item.backdropUrl} alt="" referrerPolicy="no-referrer" />
+          <img key={`bg-${item.backdropUrl}`} className={styles.banner} src={imageSrc(item.backdropUrl)} alt="" referrerPolicy="no-referrer" />
         ) : (
-          poster && <img key={`bg-${poster}`} className={styles.backdrop} src={poster} alt="" referrerPolicy="no-referrer" />
+          poster && <img key={`bg-${poster}`} className={styles.backdrop} src={imageSrc(poster)} alt="" referrerPolicy="no-referrer" />
         )}
-        {poster && <img key={poster} className={styles.contain} src={poster} alt="" referrerPolicy="no-referrer" />}
+        {poster && <img key={poster} className={styles.contain} src={imageSrc(poster)} alt="" referrerPolicy="no-referrer" />}
       </div>
     </section>
   );
