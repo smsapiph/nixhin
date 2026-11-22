@@ -197,6 +197,16 @@ describe('MediaEmbedStreams', () => {
     expect(mediaTemplateProblem('https://p.example/{anilistId}', 'movie')).toMatch(/unknown/);
   });
 
+  it('builds movie links by IMDb id and TV links by TMDB id, season and episode', async () => {
+    const { catalog } = makeCatalog();
+    const streams = new MediaEmbedStreams({
+      movieTemplate: 'https://mydomain.com/embed/movie/{imdbId}',
+      tvTemplate: 'https://mydomain.com/embed/tv/{tmdbId}/{season}/{episode}',
+    });
+    expect(decodeStreamToken(streams.movie(await catalog.movie(693134)).token)).toBe('https://mydomain.com/embed/movie/tt15239678');
+    expect(decodeStreamToken(streams.tv(await catalog.tv(126308), 1, 1).token)).toBe('https://mydomain.com/embed/tv/126308/1/1');
+  });
+
   it('builds episode URLs only for episodes that exist', async () => {
     const { catalog } = makeCatalog();
     const show = await catalog.tv(126308);

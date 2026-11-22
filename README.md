@@ -130,7 +130,10 @@ Set `TMDB_READ_TOKEN` (the **API Read Access Token** from themoviedb.org → Set
 - Playback is optional and separate from anime: `STREAM_MOVIE_TEMPLATE` (`{tmdbId}` or `{imdbId}`) and
   `STREAM_TV_TEMPLATE` (also `{season}`, `{episode}`), https only, validated at startup like
   `STREAM_EMBED_TEMPLATE`. Without them movie and TV pages play trailers. Add the provider's origin to `frame-src`
-  in `netlify.toml`.
+  in `netlify.toml`. Example for links like `/embed/movie/tt1300854` and `/embed/tv/1399/1/1`:
+  `STREAM_MOVIE_TEMPLATE=https://mydomain.com/embed/movie/{imdbId}` and
+  `STREAM_TV_TEMPLATE=https://mydomain.com/embed/tv/{tmdbId}/{season}/{episode}`. With `{imdbId}`, the few
+  movies TMDB has no IMDb id for say "This movie is not available to play".
 - My queue and Continue watching hold all three kinds (anime entries saved before keep working); TV progress is
   tracked per season.
 - TMDB's terms ask for credit: the footer says "This product uses the TMDB API but is not endorsed or certified by
