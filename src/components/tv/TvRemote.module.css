@@ -1,0 +1,36 @@
+/* Button guide along the bottom of the screen; fades after a few seconds without key presses. */
+.hint {
+  position: fixed;
+  left: 50%;
+  bottom: 1.2em;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  gap: 1.6em;
+  padding: 0.55em 1.4em;
+  border-radius: var(--radius-pill);
+  background: rgb(28 27 34 / 0.88);
+  color: var(--color-on-dark);
+  font-size: 0.8em;
+  white-space: nowrap;
+  transform: translateX(-50%);
+  transition: opacity 0.4s;
+  pointer-events: none;
+}
+
+.hidden {
+  opacity: 0;
+}
+
+.key {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.7em;
+  height: 1.7em;
+  margin-right: 0.45em;
+  padding: 0 0.35em;
+  border-radius: 0.4em;
+  background: rgb(255 255 255 / 0.16);
+  font-weight: 700;
+}

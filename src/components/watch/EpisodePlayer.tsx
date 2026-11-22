@@ -1,8 +1,12 @@
+import { Fragment, useRef } from 'react';
 import type { AnimeDetail } from '../../../shared/api';
 import { decodeStreamToken } from '../../../shared/streamToken';
 import { useStream } from '../../api/queries';
 import { useDevtoolsOpen } from '../../hooks/useDevtoolsOpen';
+import { isTv } from '../../lib/tvDevice';
+import { episodeControlKey } from '../../lib/tvPlayer';
 import { ErrorNotice, LoadingStatus } from '../feedback';
+import { TvFrameFocus } from './TvFrameFocus';
 import styles from './TrailerPlayer.module.css';
 
 interface EpisodePlayerProps {
@@ -36,6 +40,7 @@ export function EpisodePlayer({ anime, episode, language }: EpisodePlayerProps) 
   const src = data ? safeEmbedUrl(data.token) : null;
   // The frame is unmounted (not hidden) while DevTools is open, and comes back when it closes.
   const devtoolsOpen = useDevtoolsOpen();
+  const frameRef = useRef<HTMLIFrameElement>(null);
 
   return (
     <div className={styles.player}>
@@ -51,15 +56,18 @@ export function EpisodePlayer({ anime, episode, language }: EpisodePlayerProps) 
       ) : devtoolsOpen ? (
         <p className={styles.noTrailer}>Close developer tools to keep watching.</p>
       ) : src ? (
-        <iframe
-          key={src}
-          className={styles.iframe}
-          src={src}
-          title={`${anime.title} — episode ${episode} (${language})`}
-          allow="autoplay; encrypted-media; picture-in-picture; fullscreen"
-          allowFullScreen
-          referrerPolicy="strict-origin-when-cross-origin"
-        />
+        <Fragment key={src}>
+          <iframe
+            ref={frameRef}
+            className={styles.iframe}
+            src={src}
+            title={`${anime.title} — episode ${episode} (${language})`}
+            allow="autoplay; encrypted-media; picture-in-picture; fullscreen"
+            allowFullScreen
+            referrerPolicy="strict-origin-when-cross-origin"
+          />
+          {isTv && <TvFrameFocus frameRef={frameRef} requestKey={episodeControlKey(episode, language)} />}
+        </Fragment>
       ) : (
         <p className={styles.noTrailer}>This episode can’t be played here.</p>
       )}

@@ -1,4 +1,6 @@
 import type { ComponentPropsWithoutRef, ReactNode } from 'react';
+import { isTv } from '../lib/tvDevice';
+import { TvScrollRow } from './tv/TvScrollRow';
 import styles from './ui.module.css';
 
 function cx(...classes: (string | false | undefined)[]): string {
@@ -54,6 +56,13 @@ export function PillButton({ variant = 'primary', className, type = 'button', ..
 
 /** Horizontally scrolling row with scroll snapping. */
 export function ScrollRow({ children, className, ...props }: ComponentPropsWithoutRef<'div'>) {
+  if (isTv) {
+    return (
+      <TvScrollRow className={cx(styles.scrollRow, className)} {...props}>
+        {children}
+      </TvScrollRow>
+    );
+  }
   return (
     <div className={cx(styles.scrollRow, className)} {...props}>
       {children}
