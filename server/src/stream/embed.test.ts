@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { AnimeDetail } from '../../../shared/api.js';
+import { decodeStreamToken, encodeStreamToken } from '../../../shared/streamToken.js';
 import { HttpError } from '../errors.js';
 import { EmbedStreams, buildEmbedUrl, templateProblem } from './embed.js';
 
@@ -40,6 +41,31 @@ describe('buildEmbedUrl', () => {
   });
 });
 
+describe('stream tokens', () => {
+  const url = 'https://player.example.com/embed/154587/2/sub?autoplay=1&t=ö';
+
+  it('round-trips a URL without exposing it', () => {
+    const token = encodeStreamToken(url);
+    expect(token).toMatch(/^[A-Za-z0-9_-]+$/);
+    expect(token).not.toContain('example');
+    expect(decodeStreamToken(token)).toBe(url);
+  });
+
+  it('gives a different token each time', () => {
+    expect(encodeStreamToken(url)).not.toBe(encodeStreamToken(url));
+    const nonce = new Uint8Array(8).fill(7);
+    expect(encodeStreamToken(url, nonce)).toBe(encodeStreamToken(url, nonce));
+  });
+
+  it('rejects malformed and tampered tokens', () => {
+    expect(decodeStreamToken('')).toBeNull();
+    expect(decodeStreamToken('not a token!')).toBeNull();
+    expect(decodeStreamToken('AAAA')).toBeNull();
+    const token = encodeStreamToken(url);
+    expect(decodeStreamToken(`C${token.slice(1)}`)).toBeNull(); // wrong version byte
+  });
+});
+
 describe('EmbedStreams', () => {
   const streams = new EmbedStreams({ template: TEMPLATE, languages: ['sub', 'dub'] });
 
@@ -49,11 +75,10 @@ describe('EmbedStreams', () => {
   });
 
   it('builds a source, defaulting to the first language', () => {
-    expect(streams.source(anime, 2, undefined)).toEqual({
-      episode: 2,
-      language: 'sub',
-      embedUrl: 'https://player.example.com/embed/154587/2/sub',
-    });
+    const source = streams.source(anime, 2, undefined);
+    expect(source).toMatchObject({ episode: 2, language: 'sub' });
+    expect(source.token).not.toContain('player.example.com');
+    expect(decodeStreamToken(source.token)).toBe('https://player.example.com/embed/154587/2/sub');
   });
 
   it('rejects unknown languages, missing episodes and disabled playback', () => {

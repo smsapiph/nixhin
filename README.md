@@ -58,7 +58,7 @@ All endpoints are `GET`, return JSON, and validate their inputs (400 with a clea
 | `/api/genres`                         | Genre names (explicit genres excluded)      |
 | `/api/schedule`                       | Shows airing in the next 7 days             |
 | `/api/stream/config`                  | Whether episode playback is configured      |
-| `/api/anime/:id/stream?episode=&language=` | Embed URL for one episode (provider)   |
+| `/api/anime/:id/stream?episode=&language=` | Encoded embed URL for one episode (provider) |
 
 Errors share one shape: `{ "error": { "code": "...", "message": "..." } }`.
 
@@ -74,8 +74,9 @@ STREAM_LANGUAGES=sub,dub
 - Placeholders: `{anilistId}`, `{malId}`, `{episode}`, `{language}`. The template is validated at startup
   (https only, no placeholders in the host), so requests can only ever load that one provider.
 - Leave `STREAM_EMBED_TEMPLATE` empty to disable playback; the watch page then shows trailers only.
-- The player iframe is sandboxed without `allow-popups` / `allow-top-navigation`, so the embedded page
-  cannot open pop-ups or redirect Nixhin.
+- The API returns the embed URL as an encoded `token` (`shared/streamToken.ts`); the browser decodes it just
+  before setting the iframe `src`. This is obfuscation, not encryption: the key ships in the frontend bundle.
+- The player iframe is not sandboxed, and it is removed while DevTools appears to be open.
 - When deploying with a CSP, add the provider's origin to `frame-src`.
 - Only configure a provider you are licensed to use; check its terms for embedding.
 
