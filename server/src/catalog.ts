@@ -11,6 +11,7 @@ import type {
   MediaSummary,
   MovieList,
   Page,
+  PersonDetail,
   SearchFormat,
   SearchSeason,
   SearchSort,
@@ -63,4 +64,5 @@ export interface MediaCatalog {
   tv(id: number): Promise<MediaDetail>;
   tvSeason(id: number, season: number): Promise<readonly TvEpisode[]>;
   collection(id: number): Promise<MediaCollection>;
+  person(id: number): Promise<PersonDetail>;
 }

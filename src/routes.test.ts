@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { animePath, homePath, isPlainClick, mediaHomePath, modeForPath, searchPath, tvPath } from './routes';
+import { animePath, homePath, isPlainClick, mediaHomePath, modeForPath, personPath, searchPath, tvPath } from './routes';
 
 describe('route builders', () => {
   it('builds home and section paths', () => {
@@ -31,6 +31,9 @@ describe('movie and TV routes', () => {
     expect(modeForPath('/search', '?q=x&type=tv')).toBe('tv');
     expect(modeForPath('/anime/1')).toBe('anime');
     expect(modeForPath('/')).toBe('anime');
+    expect(personPath(5, 'tv')).toBe('/person/5?from=tv');
+    expect(modeForPath('/person/5', '?from=tv')).toBe('tv');
+    expect(modeForPath('/person/5')).toBe('movie');
   });
 });
 

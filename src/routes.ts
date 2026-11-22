@@ -47,6 +47,11 @@ export function mediaPath(kind: MediaKind, id: number): string {
   return kind === 'movie' ? moviePath(id) : tvPath(id);
 }
 
+/** An actor's or filmmaker's page. `from` keeps the header on the mode they were opened from. */
+export function personPath(id: number, from: MediaKind = 'movie'): string {
+  return from === 'tv' ? `/person/${id}?from=tv` : `/person/${id}`;
+}
+
 /** The page of any saved title (anime, movie or TV show). */
 export function titlePath(kind: Mode, id: number): string {
   return kind === 'anime' ? animePath(id) : mediaPath(kind, id);
@@ -56,6 +61,7 @@ export function titlePath(kind: Mode, id: number): string {
 export function modeForPath(pathname: string, search = ''): Mode {
   if (pathname === '/movies' || pathname.startsWith('/movie/')) return 'movie';
   if (pathname === '/tv' || pathname.startsWith('/tv/')) return 'tv';
+  if (pathname.startsWith('/person/')) return new URLSearchParams(search).get('from') === 'tv' ? 'tv' : 'movie';
   if (pathname === '/search') {
     const type = new URLSearchParams(search).get('type');
     if (type === 'movie' || type === 'tv') return type;

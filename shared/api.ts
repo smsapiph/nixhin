@@ -186,6 +186,8 @@ export interface MediaSummary extends AnimeRef {
 }
 
 export interface CastMember {
+  /** TMDB person id, for the person's page (`/person/:id`). */
+  readonly id: number;
   readonly name: string;
   readonly character: string | null;
   readonly imageUrl: string | null;
@@ -243,6 +245,28 @@ export interface MediaStreamSource {
   readonly season: number | null;
   readonly episode: number | null;
   readonly token: string;
+}
+
+/** An actor or filmmaker, with the movies and shows they are known for. */
+export interface PersonDetail {
+  readonly id: number;
+  readonly name: string;
+  readonly imageUrl: string | null;
+  /** e.g. "Acting", "Directing". */
+  readonly knownFor: string | null;
+  readonly biography: string | null;
+  /** ISO dates. */
+  readonly birthday: string | null;
+  readonly deathday: string | null;
+  readonly birthplace: string | null;
+  /** Their movies, most popular first, with their role in `role`. */
+  readonly movies: readonly PersonCredit[];
+  readonly shows: readonly PersonCredit[];
+}
+
+export interface PersonCredit extends MediaSummary {
+  /** Character played, or the job ("Director") for crew credits. */
+  readonly role: string | null;
 }
 
 /** A genre with its TMDB id (the value used to filter). */

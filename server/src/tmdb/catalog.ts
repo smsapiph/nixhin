@@ -6,14 +6,25 @@ import type {
   MediaSummary,
   MovieList,
   Page,
+  PersonDetail,
   TvEpisode,
   TvList,
 } from '../../../shared/api.js';
 import type { MediaCatalog } from '../catalog.js';
 import { UpstreamError } from '../errors.js';
 import type { TmdbClient } from './client.js';
-import { toEpisode, toMovieDetail, toSummary, toTvDetail, type GenreNames } from './mappers.js';
-import { RawCollection, RawGenres, RawListItem, RawMovieDetail, RawPage, RawSeason, RawTvDetail } from './schemas.js';
+import { toEpisode, toMovieDetail, toPerson, toSummary, toTvDetail, type GenreNames } from './mappers.js';
+import {
+  RawCollection,
+  RawGenres,
+  RawListItem,
+  RawMovieDetail,
+  RawPage,
+  RawPerson,
+  RawPersonCredit,
+  RawSeason,
+  RawTvDetail,
+} from './schemas.js';
 
 const MINUTE = 60_000;
 const HOUR = 60 * MINUTE;
@@ -136,6 +147,24 @@ export class TmdbCatalog implements MediaCatalog {
   async tvSeason(id: number, season: number): Promise<readonly TvEpisode[]> {
     const data = this.parse(RawSeason, await this.client.get(`/tv/${id}/season/${season}`, {}, HOUR));
     return (data.episodes ?? []).filter((episode) => episode.episode_number >= 1).map(toEpisode);
+  }
+
+  private readonly parseCredit = (value: unknown): RawPersonCredit | null => {
+    const result = RawPersonCredit.safeParse(value);
+    if (result.success) return result.data;
+    this.onInvalidItem(result.error.issues.slice(0, 3));
+    return null;
+  };
+
+  async person(id: number): Promise<PersonDetail> {
+    const [raw, movie, tv] = await Promise.all([
+      this.client.get(`/person/${id}`, { append_to_response: 'combined_credits' }, 6 * HOUR),
+      this.genreNames('movie'),
+      this.genreNames('tv'),
+    ]);
+    const data = this.parse(RawPerson, raw);
+    if (data.adult) throw new UpstreamError('not_found', 'Adult performer');
+    return toPerson(data, { movie, tv }, this.parseCredit);
   }
 
   async collection(id: number): Promise<MediaCollection> {

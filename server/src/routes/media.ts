@@ -41,6 +41,7 @@ export function mediaRoutes(catalog: MediaCatalog | null, streams: MediaEmbedStr
     };
     api.get('/movie/*', off);
     api.get('/tv/*', off);
+    api.get('/person/*', off);
     return api;
   }
 
@@ -86,6 +87,11 @@ export function mediaRoutes(catalog: MediaCatalog | null, streams: MediaEmbedStr
     const source = streams.movie(await catalog.movie(id));
     c.header('Cache-Control', 'private, max-age=300');
     return c.json(source);
+  });
+
+  api.get('/person/:id', async (c) => {
+    const { id } = parseInput(IdParams, c.req.param());
+    return cachedJson(c, await catalog.person(id), 60 * MINUTE);
   });
 
   api.get('/tv/:id', async (c) => {

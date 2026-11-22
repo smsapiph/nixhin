@@ -33,7 +33,7 @@ export const RawPage = z.object({
 export const RawGenres = z.object({ genres: z.array(Genre) });
 
 const Video = z.object({ site: z.string().nullish(), type: z.string().nullish(), key: z.string().nullish(), official: z.boolean().nullish() });
-const Cast = z.object({ name: z.string(), character: z.string().nullish(), profile_path: z.string().nullish(), order: z.number().nullish() });
+const Cast = z.object({ id: z.number().int().positive().nullish(), name: z.string(), character: z.string().nullish(), profile_path: z.string().nullish(), order: z.number().nullish() });
 const Crew = z.object({ name: z.string(), job: z.string().nullish() });
 const Named = z.object({ name: z.string() });
 
@@ -109,3 +109,26 @@ export const RawCollection = z.object({
   name: z.string(),
   parts: z.array(z.unknown()).nullish(),
 });
+
+/** A credit in /person/:id?append_to_response=combined_credits (a list item plus the person's part in it). */
+export const RawPersonCredit = RawListItem.extend({
+  character: z.string().nullish(),
+  job: z.string().nullish(),
+  popularity: z.number().nullish(),
+  episode_count: z.number().int().nullish(),
+});
+export type RawPersonCredit = z.infer<typeof RawPersonCredit>;
+
+export const RawPerson = z.object({
+  id: z.number().int().positive(),
+  name: z.string(),
+  adult: z.boolean().nullish(),
+  profile_path: z.string().nullish(),
+  known_for_department: z.string().nullish(),
+  biography: z.string().nullish(),
+  birthday: z.string().nullish(),
+  deathday: z.string().nullish(),
+  place_of_birth: z.string().nullish(),
+  combined_credits: z.object({ cast: z.array(z.unknown()).nullish(), crew: z.array(z.unknown()).nullish() }).nullish(),
+});
+export type RawPerson = z.infer<typeof RawPerson>;
