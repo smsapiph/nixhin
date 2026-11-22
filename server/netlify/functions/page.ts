@@ -1,0 +1,78 @@
+import { buildCatalog } from '../../src/bootstrap.js';
+import { loadConfig } from '../../src/config.js';
+import { createLogger } from '../../src/logger.js';
+import { animeMeta, injectMeta, isCrawler, parseAnimeLink, renderMetaTags } from '../../src/seo/pageMeta.js';
+
+/**
+ * Serves the SPA shell for `/anime/*`, with per-anime link-preview tags for crawlers
+ * (e.g. "Watch Black Clover Episode 5" + its banner). Browsers get the page unchanged.
+ */
+
+const appConfig = loadConfig({ ...process.env, NODE_ENV: 'production' });
+const logger = createLogger('info');
+const catalog = buildCatalog(appConfig, logger);
+
+/** Crawlers give up after a few seconds; better default tags than no preview. */
+const LOOKUP_TIMEOUT_MS = 4_000;
+/** Static-site headers (CSP, nosniff, …) from netlify.toml, carried over to our response. */
+const COPIED_HEADERS = [
+  'content-security-policy',
+  'x-content-type-options',
+  'referrer-policy',
+  'permissions-policy',
+];
+
+interface Shell {
+  readonly html: string;
+  readonly headers: Headers;
+}
+
+let shell: Promise<Shell> | null = null;
+
+/** The built index.html, fetched once per function instance (each deploy gets new instances). */
+function loadShell(origin: string): Promise<Shell> {
+  shell ??= (async () => {
+    const response = await fetch(new URL('/index.html', origin));
+    if (!response.ok) throw new Error(`index.html: HTTP ${response.status}`);
+    const headers = new Headers({ 'Content-Type': 'text/html; charset=utf-8' });
+    for (const name of COPIED_HEADERS) {
+      const value = response.headers.get(name);
+      if (value) headers.set(name, value);
+    }
+    return { html: await response.text(), headers };
+  })().catch((error: unknown) => {
+    shell = null;
+    throw error;
+  });
+  return shell;
+}
+
+function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<never>((_, reject) => setTimeout(() => reject(new Error('timeout')), ms).unref?.()),
+  ]);
+}
+
+export default async (request: Request) => {
+  const url = new URL(request.url);
+  const { html, headers } = await loadShell(url.origin);
+  const out = new Headers(headers);
+  out.set('Cache-Control', 'public, max-age=0, must-revalidate');
+  out.set('Vary', 'User-Agent');
+
+  const link = parseAnimeLink(url);
+  if (!link || !isCrawler(request.headers.get('user-agent'))) return new Response(html, { headers: out });
+
+  try {
+    const anime = await withTimeout(catalog.anime(link.id), LOOKUP_TIMEOUT_MS);
+    const siteUrl = (process.env.URL ?? url.origin).replace(/\/+$/, '');
+    return new Response(injectMeta(html, renderMetaTags(animeMeta(anime, link, siteUrl))), { headers: out });
+  } catch (error) {
+    // Unknown id, AniList down or slow: fall back to the site-wide preview.
+    logger.info('page meta fallback', { id: link.id, error: error instanceof Error ? error.message : String(error) });
+    return new Response(html, { headers: out });
+  }
+};
+
+export const config = { path: '/anime/*' };
