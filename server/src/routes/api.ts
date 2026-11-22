@@ -26,12 +26,17 @@ export function apiRoutes(catalog: AnimeCatalog, streams: EmbedStreams): Hono {
   });
 
   api.get('/anime/search', async (c) => {
-    const { q, genre, page, limit } = parseInput(SearchQuery, c.req.query());
+    const { q, genre, year, season, format, status, sort, page, limit } = parseInput(SearchQuery, c.req.query());
     const result = await catalog.search({
       page,
       limit,
       ...(q !== undefined && { query: q }),
       ...(genre !== undefined && { genre }),
+      ...(year !== undefined && { year }),
+      ...(season !== undefined && { season }),
+      ...(format !== undefined && { format }),
+      ...(status !== undefined && { status }),
+      ...(sort !== undefined && { sort }),
     });
     return cachedJson(c, result, 5 * MINUTE);
   });

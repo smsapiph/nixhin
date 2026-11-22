@@ -1,0 +1,44 @@
+.item {
+  position: relative;
+  flex: 0 0 var(--card-width);
+  width: var(--card-width);
+  scroll-snap-align: start;
+}
+
+.bar {
+  display: block;
+  height: 4px;
+  margin-bottom: 0.6em;
+  overflow: hidden;
+  border-radius: var(--radius-pill);
+  background: var(--color-line);
+}
+
+.fill {
+  display: block;
+  height: 100%;
+  background: var(--color-accent);
+}
+
+.remove {
+  position: absolute;
+  top: 0.4em;
+  right: 0.4em;
+  display: grid;
+  place-items: center;
+  width: 2.2em;
+  height: 2.2em;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: rgb(17 16 21 / 0.7);
+  color: var(--color-on-dark);
+  font-size: 1em;
+  line-height: 1;
+}
+
+@media (hover: hover) {
+  .remove:hover {
+    background: var(--color-player);
+  }
+}

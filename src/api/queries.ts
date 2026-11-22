@@ -6,6 +6,10 @@ import type {
   Episode,
   Genre,
   Page,
+  SearchFormat,
+  SearchSeason,
+  SearchSort,
+  SearchStatus,
   SeasonEntry,
   StreamConfig,
   StreamSource,
@@ -34,8 +38,7 @@ export function createQueryClient(): QueryClient {
 export const queryKeys = {
   top: (filter: TopFilter, limit: number) => ['anime', 'top', filter, limit] as const,
   seasonNow: (limit: number) => ['anime', 'season-now', limit] as const,
-  search: (query: string | undefined, genre: string | undefined) =>
-    ['anime', 'search', { query, genre }] as const,
+  search: (args: SearchArgs) => ['anime', 'search', { ...args }] as const,
   anime: (id: number) => ['anime', id] as const,
   episodes: (id: number, page: number) => ['anime', id, 'episodes', page] as const,
   seasons: (id: number) => ['anime', id, 'seasons'] as const,
@@ -62,24 +65,49 @@ export function useSeasonNow(limit = 12) {
   });
 }
 
-interface SearchArgs {
-  readonly query?: string;
+/** Browse filters; every field is optional and an unset field means "any". */
+export interface BrowseFilters {
   /** Genre name, e.g. "Slice of Life". */
   readonly genre?: string;
+  readonly year?: number;
+  readonly season?: SearchSeason;
+  readonly format?: SearchFormat;
+  readonly status?: SearchStatus;
+  readonly sort?: SearchSort;
 }
 
-export function useAnimeSearch({ query, genre }: SearchArgs) {
+export interface SearchArgs extends BrowseFilters {
+  readonly query?: string;
+}
+
+function searchPage(args: SearchArgs, page: number, signal?: AbortSignal) {
+  const { query, ...filters } = args;
+  return apiGet<Page<AnimeSummary>>('/anime/search', { q: query, ...filters, page, limit: PAGE_SIZE }, signal);
+}
+
+export function useAnimeSearch(args: SearchArgs) {
   return useInfiniteQuery({
-    queryKey: queryKeys.search(query, genre),
-    queryFn: ({ pageParam, signal }) =>
-      apiGet<Page<AnimeSummary>>(
-        '/anime/search',
-        { q: query, genre, page: pageParam, limit: PAGE_SIZE },
-        signal,
-      ),
+    queryKey: queryKeys.search(args),
+    queryFn: ({ pageParam, signal }) => searchPage(args, pageParam, signal),
     initialPageParam: 1,
     getNextPageParam: nextPage,
   });
+}
+
+/** How deep "Surprise me" digs into the (popularity-sorted) results. */
+const RANDOM_PAGES = 20;
+
+/**
+ * A random title matching the filters, or null when nothing matches. Picks a random results
+ * page, falling back to the first page when the filters leave fewer results than that.
+ */
+export async function randomAnime(filters: BrowseFilters, random = Math.random): Promise<AnimeSummary | null> {
+  const args: SearchArgs = { ...filters, sort: filters.sort ?? 'popularity' };
+  const page = 1 + Math.floor(random() * RANDOM_PAGES);
+  let result = await searchPage(args, page);
+  if (result.items.length === 0 && page > 1) result = await searchPage(args, 1);
+  const { items } = result;
+  return items.length === 0 ? null : (items[Math.floor(random() * items.length)] ?? null);
 }
 
 export function useAnime(id: number) {

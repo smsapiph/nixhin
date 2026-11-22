@@ -1,5 +1,6 @@
 import type { AnimeRef } from '../../shared/api';
 import { Browse } from '../components/home/Browse';
+import { ContinueWatching } from '../components/home/ContinueWatching';
 import { Hero } from '../components/home/Hero';
 import { MyQueue, NewSeason, Trending } from '../components/home/HomeSections';
 import { Schedule } from '../components/home/Schedule';
@@ -22,6 +23,7 @@ export function HomePage({ layout, queue, isQueued, onToggleQueue, onOpen, onNav
   return (
     <main id="top" className={styles.page}>
       <Hero showRemoteHint={layout === 'tv'} isQueued={isQueued} onToggleQueue={onToggleQueue} onOpen={onOpen} />
+      <ContinueWatching />
       <Trending onOpen={onOpen} onNavigate={onNavigate} />
       <NewSeason onOpen={onOpen} onNavigate={onNavigate} />
       <MyQueue items={queue} onOpen={onOpen} />

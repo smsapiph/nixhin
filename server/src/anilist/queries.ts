@@ -49,10 +49,30 @@ export const SEASON_QUERY = /* GraphQL */ `
 `;
 
 export const SEARCH_QUERY = /* GraphQL */ `
-  query Search($page: Int!, $perPage: Int!, $search: String, $genre: String, $sort: [MediaSort]) {
+  query Search(
+    $page: Int!
+    $perPage: Int!
+    $search: String
+    $genre: String
+    $seasonYear: Int
+    $season: MediaSeason
+    $format: MediaFormat
+    $status: MediaStatus
+    $sort: [MediaSort]
+  ) {
     Page(page: $page, perPage: $perPage) {
       ${PAGE_INFO}
-      media(type: ANIME, isAdult: false, search: $search, genre: $genre, sort: $sort) { ...MediaSummary }
+      media(
+        type: ANIME
+        isAdult: false
+        search: $search
+        genre: $genre
+        seasonYear: $seasonYear
+        season: $season
+        format: $format
+        status: $status
+        sort: $sort
+      ) { ...MediaSummary }
     }
   }
   ${MEDIA_SUMMARY}

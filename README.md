@@ -51,7 +51,7 @@ All endpoints are `GET`, return JSON, and validate their inputs (400 with a clea
 | `/api/health`                         | Liveness check                              |
 | `/api/anime/top?filter=&limit=`       | Top anime (`airing`, `upcoming`, …)         |
 | `/api/anime/season-now?page=&limit=`  | Current season                              |
-| `/api/anime/search?q=&genre=&page=`   | Search / browse by genre name, SFW only     |
+| `/api/anime/search?q=&genre=&year=&season=&format=&status=&sort=&page=` | Search / browse with filters, SFW only |
 | `/api/anime/:id`                      | Details (incl. validated YouTube trailer id)|
 | `/api/anime/:id/episodes?page=`       | Aired episodes (titles/dates when known)    |
 | `/api/anime/:id/recommendations`      | Fan recommendations                         |
@@ -107,6 +107,21 @@ STREAM_LANGUAGES=sub,dub
 | `/anime/:id?ep=&lang=` | Watch page; episode and language survive refresh |
 | `/search?q=` | Search results |
 | anything else | 404 page |
+
+## Data kept on the device (no database)
+
+Everything personal lives in the viewer's browser (`localStorage`, `src/lib/store.ts`), synced across tabs:
+
+| Key | What |
+| --- | --- |
+| `nixhin-queue-v3` | My queue |
+| `nixhin-progress-v1` | Continue watching: last episode + language per show, watched episodes |
+| `nixhin-searches-v1` | Last 10 searches (shown under the search box) |
+| `nixhin-prefs-v1` | Preferred audio language (sub/dub) |
+
+An episode is marked watched after 4 minutes on the player, when the viewer presses Next, or by hand in the
+episode list. **Export / Import backup** (under My queue) downloads all of it as one JSON file and merges it back
+on another device. The file is validated on import (`src/lib/backup.ts`).
 
 ## Frontend structure
 

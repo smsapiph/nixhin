@@ -160,3 +160,103 @@
 .menuLink:last-child {
   border-bottom: 0;
 }
+
+/* Recent searches, under the search field. */
+.suggestions {
+  position: absolute;
+  top: calc(100% + 0.4em);
+  left: 0;
+  right: 0;
+  z-index: 20;
+  min-width: 15em;
+  padding: 0.4em 0;
+  border: 1px solid var(--color-line);
+  border-radius: 0.9em;
+  background: var(--color-surface);
+  box-shadow: 0 12px 30px rgb(28 27 34 / 0.12);
+  color: var(--color-ink);
+}
+
+.suggestionsHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.2em 0.6em 0.2em 1em;
+  color: var(--color-muted);
+  font-size: 0.78em;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.clearHistory {
+  min-height: 2.4em;
+  padding: 0 0.6em;
+  border: 0;
+  background: transparent;
+  color: var(--color-ink-soft);
+  font-size: 1em;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  text-decoration: underline;
+  text-underline-offset: 0.25em;
+}
+
+.suggestionList {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.suggestion {
+  display: flex;
+  align-items: stretch;
+}
+
+.suggestionButton,
+.suggestionRemove {
+  border: 0;
+  background: transparent;
+  color: inherit;
+}
+
+.suggestionButton {
+  display: flex;
+  flex: 1 1 auto;
+  align-items: center;
+  gap: 0.7em;
+  min-width: 0;
+  min-height: var(--tap-size);
+  padding: 0 0.6em 0 1em;
+  text-align: left;
+  color: var(--color-ink);
+}
+
+.suggestionButton > svg {
+  flex: 0 0 auto;
+  color: var(--color-faint);
+}
+
+.suggestionText {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.suggestionRemove {
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: var(--tap-size);
+  color: var(--color-faint);
+}
+
+@media (hover: hover) {
+  .suggestionButton:hover,
+  .suggestionRemove:hover {
+    background: var(--color-line-faint);
+  }
+
+  .suggestionRemove:hover {
+    color: var(--color-ink);
+  }
+}

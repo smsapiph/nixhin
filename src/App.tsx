@@ -6,6 +6,7 @@ import { TabBar } from './components/TabBar';
 import { tabForSection, useActiveSection } from './hooks/useActiveSection';
 import { useLayout } from './hooks/useLayout';
 import { useQueue } from './hooks/useQueue';
+import { addSearch, searchHistoryStore } from './lib/searchHistory';
 import { AnimePage } from './pages/AnimePage';
 import { HomePage } from './pages/HomePage';
 import { NotFoundPage } from './pages/NotFoundPage';
@@ -90,7 +91,13 @@ export function App() {
   );
 
   const openAnime = useCallback((id: number) => navigateTo(animePath(id)), [navigateTo]);
-  const search = useCallback((query: string) => navigateTo(searchPath(query)), [navigateTo]);
+  const search = useCallback(
+    (query: string) => {
+      searchHistoryStore.set((list) => addSearch(list, query));
+      navigateTo(searchPath(query));
+    },
+    [navigateTo],
+  );
 
   // Go back when the previous page is ours; otherwise (deep link / refresh) go home.
   const goBack = useCallback(() => {

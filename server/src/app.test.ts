@@ -28,7 +28,6 @@ const detail: AnimeDetail = {
   rank: null,
   studios: [],
   trailer: null,
-  sourceUrl: 'https://anilist.co/anime/1',
   malId: 1,
   airedEpisodes: 12,
 };
@@ -80,6 +79,11 @@ describe('API', () => {
     '/api/anime/search?q=%00',
     '/api/anime/search?genre=Action;drop',
     '/api/anime/search?genre=%7B__schema%7D',
+    '/api/anime/search?year=1800',
+    '/api/anime/search?season=monsoon',
+    '/api/anime/search?format=MOVIE',
+    '/api/anime/search?status=dropped',
+    '/api/anime/search?sort=random',
   ])('rejects invalid input: %s', async (path) => {
     const res = await makeApp().request(path);
     expect(res.status).toBe(400);
@@ -90,6 +94,20 @@ describe('API', () => {
     const catalog = fakeCatalog();
     await makeApp(catalog).request('/api/anime/search?q=%20frieren%20&genre=Slice%20of%20Life&page=3');
     expect(catalog.search).toHaveBeenCalledWith({ query: 'frieren', genre: 'Slice of Life', page: 3, limit: 24 });
+  });
+
+  it('passes browse filters to the catalog', async () => {
+    const catalog = fakeCatalog();
+    await makeApp(catalog).request('/api/anime/search?year=2023&season=fall&format=movie&status=finished&sort=score');
+    expect(catalog.search).toHaveBeenCalledWith({
+      year: 2023,
+      season: 'fall',
+      format: 'movie',
+      status: 'finished',
+      sort: 'score',
+      page: 1,
+      limit: 24,
+    });
   });
 
   it('returns JSON 404 for unknown routes and non-GET methods', async () => {

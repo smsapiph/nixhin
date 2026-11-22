@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import type { SectionId } from '../types';
 
 /** Home-page sections in document order (the hero has no anchor; above them means "top"). */
-const SECTIONS: readonly SectionId[] = ['trending', 'season', 'queue', 'browse', 'schedule'];
+const SECTIONS: readonly SectionId[] = ['continue', 'trending', 'season', 'queue', 'browse', 'schedule'];
 
 /**
  * Scroll spy: reports which home section crosses a line just above the middle of the viewport.
@@ -44,5 +44,5 @@ export function useActiveSection(enabled: boolean): SectionId | null {
 
 /** The tab that represents a section: the top-of-page carousels all belong to Home. */
 export function tabForSection(section: SectionId | null): SectionId | null {
-  return section === 'trending' || section === 'season' ? 'top' : section;
+  return section === 'continue' || section === 'trending' || section === 'season' ? 'top' : section;
 }

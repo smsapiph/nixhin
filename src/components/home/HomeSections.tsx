@@ -8,6 +8,7 @@ import { CardRowSkeleton, EmptyNotice, ErrorNotice, LoadingStatus } from '../fee
 import type { NavigateHandler } from '../navigation';
 import { ShowCard } from '../ShowCard';
 import { Muted, ScrollRow, SectionHeader, TextLink, TitleLines } from '../ui';
+import { Backup } from './Backup';
 import styles from './HomeSections.module.css';
 import { homePath, isPlainClick } from '../../routes';
 
@@ -67,6 +68,7 @@ export function MyQueue({ items, onOpen }: { readonly items: readonly AnimeRef[]
           ))}
         </ScrollRow>
       )}
+      <Backup />
     </HomeSection>
   );
 }

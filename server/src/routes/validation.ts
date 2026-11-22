@@ -1,5 +1,12 @@
 import { z } from 'zod';
-import { TOP_FILTERS } from '../../../shared/api.js';
+import {
+  SEARCH_FORMATS,
+  SEARCH_MIN_YEAR,
+  SEARCH_SEASONS,
+  SEARCH_SORTS,
+  SEARCH_STATUSES,
+  TOP_FILTERS,
+} from '../../../shared/api.js';
 import { HttpError } from '../errors.js';
 
 /** Strict positive integer from a string: no signs, decimals, exponents or whitespace. */
@@ -56,6 +63,11 @@ export const SearchQuery = z.object({
     .trim()
     .regex(/^[A-Za-z][A-Za-z -]{0,39}$/, 'must be a genre name')
     .optional(),
+  year: intInRange(SEARCH_MIN_YEAR, 2100).optional(),
+  season: z.enum(SEARCH_SEASONS).optional(),
+  format: z.enum(SEARCH_FORMATS).optional(),
+  status: z.enum(SEARCH_STATUSES).optional(),
+  sort: z.enum(SEARCH_SORTS).optional(),
   page,
   limit: limit(24),
 });
