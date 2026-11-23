@@ -7,7 +7,7 @@ import { Icon } from '../components/Icon';
 import { PillButton } from '../components/ui';
 import { useDocumentTitle } from '../hooks/useDocumentTitle';
 import { useStore } from '../hooks/useStore';
-import { imageSrc } from '../lib/images';
+import { imageCandidates } from '../lib/images';
 import { LANGUAGE_LABELS, chapterLabel, chapterNumber, neighbours } from '../lib/mangaChapters';
 import { mangaProgressStore, recordReading } from '../lib/mangaProgress';
 import { createStore } from '../lib/store';
@@ -231,14 +231,17 @@ function ChapterSelect({ chapters, currentId, onChoose }: ChapterSelectProps) {
 type PageState = 'loading' | 'loaded' | 'failed';
 
 /**
- * One page image: tries the copy through this site, then the MangaDex@Home node, then offers a retry.
- * Focusable on TVs so the D-pad scrolls page by page.
+ * One page image: tries this site's /img/md/ copy, then the MangaDex@Home node, then uploads.mangadex.org, then offers a
+ * retry (which starts over with cache-busted addresses). Focusable on TVs so the D-pad scrolls page by page.
  */
 function PageView({ page, index, count }: { readonly page: PageImage; readonly index: number; readonly count: number }) {
   const [attempt, setAttempt] = useState(0);
+  const [round, setRound] = useState(0);
   const [state, setState] = useState<PageState>('loading');
-  // 0: proxied copy, 1: node, 2+: retries of the proxied copy (cache-busted).
-  const src = attempt === 1 ? page.fallbackUrl : `${imageSrc(page.url)}${attempt >= 2 ? `?retry=${attempt}` : ''}`;
+  const [proxied, ...rest] = imageCandidates(page.url);
+  const candidates = [proxied ?? page.url, page.fallbackUrl, ...rest];
+  const base = candidates[attempt] ?? page.url;
+  const src = round > 0 ? `${base}${base.includes('?') ? '&' : '?'}retry=${round}` : base;
 
   return (
     <figure className={`${styles.pageFrame} ${state === 'loading' ? styles.pending : ''}`} tabIndex={isTv ? 0 : undefined}>
@@ -250,7 +253,8 @@ function PageView({ page, index, count }: { readonly page: PageImage; readonly i
             className={styles.retry}
             onClick={() => {
               setState('loading');
-              setAttempt((value) => Math.max(2, value + 1));
+              setAttempt(0);
+              setRound((value) => value + 1);
             }}
           >
             Try again
@@ -267,7 +271,7 @@ function PageView({ page, index, count }: { readonly page: PageImage; readonly i
           referrerPolicy="no-referrer"
           onLoad={() => setState('loaded')}
           onError={() => {
-            if (attempt === 0) setAttempt(1);
+            if (attempt + 1 < candidates.length) setAttempt(attempt + 1);
             else setState('failed');
           }}
         />

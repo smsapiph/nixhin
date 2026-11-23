@@ -1,6 +1,6 @@
 import { useState, type ReactNode } from 'react';
 import styles from './Poster.module.css';
-import { imageSrc } from '../lib/images';
+import { imageCandidates } from '../lib/images';
 
 type Shape = 'poster' | 'wide' | 'custom';
 
@@ -21,9 +21,12 @@ interface PosterProps {
  * The image is decorative (alt=""): cards always show the title as text next to it.
  */
 export function Poster({ src, title, shape = 'poster', priority = false, className, children }: PosterProps) {
-  const [failedSrc, setFailedSrc] = useState<string | null>(null);
-  const showImage = src !== null && src !== failedSrc;
-  const url = imageSrc(src);
+  // How many addresses of `src` have failed (MangaDex images have a second route); reset when `src` changes.
+  const [failed, setFailed] = useState<{ readonly src: string | null; readonly count: number }>({ src: null, count: 0 });
+  const failures = failed.src === src ? failed.count : 0;
+  const candidates = src === null ? [] : imageCandidates(src);
+  const url = candidates[failures] ?? null;
+  const showImage = url !== null;
   const classes = [styles.frame, shape !== 'custom' && styles[shape], className].filter(Boolean).join(' ');
 
   return (
@@ -31,12 +34,13 @@ export function Poster({ src, title, shape = 'poster', priority = false, classNa
       {showImage ? (
         <img
           className={styles.image}
-          src={url ?? undefined}
+          key={url}
+          src={url}
           alt=""
           loading={priority ? 'eager' : 'lazy'}
           decoding="async"
           referrerPolicy="no-referrer"
-          onError={() => setFailedSrc(src)}
+          onError={() => setFailed({ src, count: failures + 1 })}
         />
       ) : (
         <span className={styles.fallback} aria-hidden="true">
