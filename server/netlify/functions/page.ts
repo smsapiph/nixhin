@@ -37,24 +37,41 @@ interface Shell {
   readonly headers: Headers;
 }
 
-let shell: Promise<Shell> | null = null;
+/**
+ * How long a fetched index.html (and the CSP and other headers copied from it) is reused. A warm instance
+ * can outlive a deploy when this function's code is unchanged, so the copy must expire: otherwise a
+ * netlify.toml header change (e.g. a new player origin in frame-src) never reaches /anime, /movie and /tv.
+ */
+const SHELL_TTL_MS = 60_000;
 
-/** The built index.html, fetched once per function instance (each deploy gets new instances). */
+let shell: { readonly value: Promise<Shell>; readonly fetchedAt: number } | null = null;
+
+async function fetchShell(origin: string): Promise<Shell> {
+  // A unique query skips cached copies, whose headers can predate the latest deploy.
+  const url = new URL('/index.html', origin);
+  url.searchParams.set('shell', String(Date.now()));
+  const response = await fetch(url, { cache: 'no-store' });
+  if (!response.ok) throw new Error(`index.html: HTTP ${response.status}`);
+  const headers = new Headers({ 'Content-Type': 'text/html; charset=utf-8' });
+  for (const name of COPIED_HEADERS) {
+    const value = response.headers.get(name);
+    if (value) headers.set(name, value);
+  }
+  return { html: await response.text(), headers };
+}
+
+/** The built index.html with its static-site headers, refreshed every minute; a failed refresh keeps the last copy. */
 function loadShell(origin: string): Promise<Shell> {
-  shell ??= (async () => {
-    const response = await fetch(new URL('/index.html', origin));
-    if (!response.ok) throw new Error(`index.html: HTTP ${response.status}`);
-    const headers = new Headers({ 'Content-Type': 'text/html; charset=utf-8' });
-    for (const name of COPIED_HEADERS) {
-      const value = response.headers.get(name);
-      if (value) headers.set(name, value);
-    }
-    return { html: await response.text(), headers };
-  })().catch((error: unknown) => {
+  const now = Date.now();
+  if (shell && now - shell.fetchedAt < SHELL_TTL_MS) return shell.value;
+  const previous = shell?.value;
+  const value = fetchShell(origin).catch((error: unknown) => {
+    if (previous) return previous;
     shell = null;
     throw error;
   });
-  return shell;
+  shell = { value, fetchedAt: now };
+  return value;
 }
 
 function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
