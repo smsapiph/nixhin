@@ -26,9 +26,8 @@
   status = 200
   force = true
 
-# MangaDex covers and chapter pages through this site, like TMDB above: the browser asks for /img/md/covers/…
-# or /img/md/data/… and Netlify fetches it from uploads.mangadex.org (src/lib/images.ts). The page sends no
-# Referer (referrerPolicy="no-referrer"), so MangaDex's hotlink check passes.
+# MangaDex covers and chapter pages, last resort only: the browser loads them straight from uploads.mangadex.org
+# first (MangaDex refused them through this proxy), and tries /img/md/covers/… or /img/md/data/… if that fails.
 [[redirects]]
   from = "/img/md/*"
   to = "https://uploads.mangadex.org/:splat"
@@ -48,8 +47,9 @@
     # frame-src lists the player origins: YouTube (trailers), the anime provider (STREAM_EMBED_TEMPLATE) and the
     # movie/TV provider (STREAM_MOVIE_TEMPLATE, STREAM_TV_TEMPLATE): player.lokal-delivery.com, with vsembed.ru kept
     # as a fallback so switching the env back works without a CSP change. Update it when a provider changes.
-    # img-src *.mangadex.network: MangaDex@Home nodes, the reader's fallback when /img/md/ fails (MangaPage.fallbackUrl).
-    Content-Security-Policy = "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: https://s4.anilist.co https://img.anili.st https://i.ytimg.com https://img.youtube.com https://image.tmdb.org https://*.mangadex.network; frame-src https://www.youtube-nocookie.com https://megaplay.buzz https://player.lokal-delivery.com https://vsembed.ru; connect-src 'self'; base-uri 'self'; form-action 'self'; object-src 'none'; frame-ancestors 'none'"
+    # img-src uploads.mangadex.org and *.mangadex.network: manga covers and pages load straight from MangaDex
+    # (src/lib/images.ts); /img/md/ is only their last resort.
+    Content-Security-Policy = "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: https://s4.anilist.co https://img.anili.st https://i.ytimg.com https://img.youtube.com https://image.tmdb.org https://uploads.mangadex.org https://*.mangadex.network; frame-src https://www.youtube-nocookie.com https://megaplay.buzz https://player.lokal-delivery.com https://vsembed.ru; connect-src 'self'; base-uri 'self'; form-action 'self'; object-src 'none'; frame-ancestors 'none'"
     X-Content-Type-Options = "nosniff"
     Referrer-Policy = "strict-origin-when-cross-origin"
     Permissions-Policy = "camera=(), microphone=(), geolocation=()"

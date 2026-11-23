@@ -247,9 +247,9 @@ is needed, so it is on by default (`MANGA_ENABLED=false` hides it).
 - Only titles rated `safe` or `suggestive` with English or Filipino chapters are listed.
 - The server sends its own User-Agent (MangaDex blocks browser-like ones) and stays under MangaDex's rate limit
   (about 5 requests/second per IP), caching every response.
-- Covers and pages load through this site at `/img/md/*` (a Netlify proxy rule, and a Vite proxy in development) with
-  no Referer, so ISP blocks and MangaDex's hotlink check don't break them. If that copy fails, the reader falls back to
-  the MangaDex@Home node (`*.mangadex.network`, allowed in the CSP).
+- Covers and pages load straight from `uploads.mangadex.org` with no Referer (MangaDex's hotlink check allows that;
+  it refused them through a Netlify proxy). If that fails, the reader tries the MangaDex@Home node
+  (`*.mangadex.network`), then this site's `/img/md/*` proxy. Both MangaDex hosts are allowed in the CSP.
 - Each chapter credits its scanlation group and MangaDex. Chapters published on an official site (e.g. MANGA Plus)
   link there instead.
 - Reading progress ("Continue reading") stays in the browser (`nixhin-manga-progress-v1`).

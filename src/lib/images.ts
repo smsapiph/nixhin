@@ -8,7 +8,10 @@
  */
 const TMDB_IMAGES = 'https://image.tmdb.org/t/p/';
 export const TMDB_PROXY_PATH = '/img/tmdb/';
-/** MangaDex covers and chapter pages, the same way (`/img/md/*` in netlify.toml). */
+/**
+ * MangaDex covers and chapter pages load straight from uploads.mangadex.org (with no Referer, which its hotlink
+ * check allows). MangaDex refused them through the Netlify proxy, so `/img/md/*` is only the second try.
+ */
 const MANGADEX_IMAGES = 'https://uploads.mangadex.org/';
 export const MANGADEX_PROXY_PATH = '/img/md/';
 
@@ -16,6 +19,11 @@ export function imageSrc(url: string): string;
 export function imageSrc(url: string | null): string | null;
 export function imageSrc(url: string | null): string | null {
   if (url?.startsWith(TMDB_IMAGES)) return TMDB_PROXY_PATH + url.slice(TMDB_IMAGES.length);
-  if (url?.startsWith(MANGADEX_IMAGES)) return MANGADEX_PROXY_PATH + url.slice(MANGADEX_IMAGES.length);
   return url;
+}
+
+/** Addresses to try in order for one image: where `imageSrc` points, then a second route for MangaDex. */
+export function imageCandidates(url: string): readonly string[] {
+  if (url.startsWith(MANGADEX_IMAGES)) return [url, MANGADEX_PROXY_PATH + url.slice(MANGADEX_IMAGES.length)];
+  return [imageSrc(url)];
 }
