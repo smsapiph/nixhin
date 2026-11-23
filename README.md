@@ -74,7 +74,7 @@ All endpoints are `GET`, return JSON, and validate their inputs (400 with a clea
 | `/api/manga/list/:list?page=`         | MangaDex lists: `popular`, `latest`, `top`, `new` (English/Filipino chapters only) |
 | `/api/manga/search?q=&page=`          | Manga search                                |
 | `/api/manga/:id`                      | Manga details (MangaDex UUID)               |
-| `/api/manga/:id/chapters?lang=en\|fil` | Every readable chapter in one language, in reading order |
+| `/api/manga/:id/chapters?lang=en\|tl` (tl = Filipino) | Every readable chapter in one language, in reading order |
 | `/api/manga/chapter/:id`              | One chapter's page images (+ data-saver set) |
 
 Errors share one shape: `{ "error": { "code": "...", "message": "..." } }`.

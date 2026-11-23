@@ -277,8 +277,8 @@ export interface MediaGenre {
 
 /* ------------------------------------------------------------------ Manga (MangaDex) */
 
-/** Chapter languages the site offers, in MangaDex codes: English and Filipino. */
-export const MANGA_LANGUAGES = ['en', 'fil'] as const;
+/** Chapter languages the site offers, in MangaDex codes: English and Filipino (MangaDex calls it `tl`, Tagalog; codes must be two letters). */
+export const MANGA_LANGUAGES = ['en', 'tl'] as const;
 export type MangaLanguage = (typeof MANGA_LANGUAGES)[number];
 
 /** Lists shown on the Manga home (`/api/manga/list/:list`). */

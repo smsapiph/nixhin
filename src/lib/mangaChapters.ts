@@ -2,7 +2,7 @@ import type { MangaChapter, MangaLanguage } from '../../shared/api';
 
 /** Chapter list helpers for the manga page and the reader. Chapters arrive in reading order. */
 
-export const LANGUAGE_LABELS: Readonly<Record<MangaLanguage, string>> = { en: 'English', fil: 'Filipino' };
+export const LANGUAGE_LABELS: Readonly<Record<MangaLanguage, string>> = { en: 'English', tl: 'Filipino' };
 
 type Numbered = Pick<MangaChapter, 'chapter' | 'volume' | 'title'>;
 

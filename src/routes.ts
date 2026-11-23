@@ -34,7 +34,7 @@ export function mangaHomePath(section: MangaSectionId = 'top'): string {
 /** MangaDex ids are lowercase UUIDs. */
 export const MANGA_ID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 
-/** `/manga/:id`, or `/manga/:id?lang=fil` for the Filipino chapter list. */
+/** `/manga/:id`, or `/manga/:id?lang=tl` for the Filipino chapter list. */
 export function mangaPath(id: string, language?: MangaLanguage): string {
   return language && language !== 'en' ? `/manga/${id}?lang=${language}` : `/manga/${id}`;
 }
