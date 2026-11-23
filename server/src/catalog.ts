@@ -8,6 +8,12 @@ import type {
   MediaDetail,
   MediaGenre,
   MediaKind,
+  MangaChapter,
+  MangaChapterPages,
+  MangaDetail,
+  MangaLanguage,
+  MangaList,
+  MangaSummary,
   MediaSummary,
   MovieList,
   Page,
@@ -65,4 +71,14 @@ export interface MediaCatalog {
   tvSeason(id: number, season: number): Promise<readonly TvEpisode[]>;
   collection(id: number): Promise<MediaCollection>;
   person(id: number): Promise<PersonDetail>;
+}
+
+/** Manga (MangaDex). Needs no key, so it is always on. Ids are MangaDex UUIDs. */
+export interface MangaCatalog {
+  list(list: MangaList, page: number): Promise<Page<MangaSummary>>;
+  search(query: string, page: number): Promise<Page<MangaSummary>>;
+  manga(id: string): Promise<MangaDetail>;
+  /** Every readable chapter in one language, in reading order. */
+  chapters(id: string, language: MangaLanguage): Promise<readonly MangaChapter[]>;
+  chapter(id: string): Promise<MangaChapterPages>;
 }

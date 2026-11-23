@@ -1,0 +1,5 @@
+/* Cards are links here (MangaCard); keep them looking like the poster buttons elsewhere. */
+.link {
+  color: inherit;
+  text-decoration: none;
+}

@@ -2,6 +2,11 @@ import { loadEnv } from 'vite';
 import { defineConfig } from 'vitest/config';
 import react from '@vitejs/plugin-react';
 
+/** The one proxy event used below (the root project has no Node typings for http-proxy's EventEmitter). */
+interface ProxyEvents {
+  on(event: 'proxyReq', listener: (request: { removeHeader(name: string): void }) => void): void;
+}
+
 /** Where the backend runs in development (see server/.env.example). */
 const apiTarget = 'http://127.0.0.1:8787';
 
@@ -38,6 +43,13 @@ export default defineConfig({
       '/api': { target: apiTarget, changeOrigin: false },
       // Same as the /img/tmdb/* rule in netlify.toml (see src/lib/images.ts).
       '/img/tmdb': { target: 'https://image.tmdb.org', changeOrigin: true, rewrite: (path) => path.replace(/^\/img\/tmdb/, '/t/p') },
+      // Same as the /img/md/* rule in netlify.toml. No Referer, or MangaDex answers with its hotlink placeholder.
+      '/img/md': {
+        target: 'https://uploads.mangadex.org',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/img\/md/, ''),
+        configure: (proxy) => (proxy as unknown as ProxyEvents).on('proxyReq', (request) => request.removeHeader('referer')),
+      },
     },
   },
   preview: {

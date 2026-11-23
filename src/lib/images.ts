@@ -8,9 +8,14 @@
  */
 const TMDB_IMAGES = 'https://image.tmdb.org/t/p/';
 export const TMDB_PROXY_PATH = '/img/tmdb/';
+/** MangaDex covers and chapter pages, the same way (`/img/md/*` in netlify.toml). */
+const MANGADEX_IMAGES = 'https://uploads.mangadex.org/';
+export const MANGADEX_PROXY_PATH = '/img/md/';
 
 export function imageSrc(url: string): string;
 export function imageSrc(url: string | null): string | null;
 export function imageSrc(url: string | null): string | null {
-  return url?.startsWith(TMDB_IMAGES) ? TMDB_PROXY_PATH + url.slice(TMDB_IMAGES.length) : url;
+  if (url?.startsWith(TMDB_IMAGES)) return TMDB_PROXY_PATH + url.slice(TMDB_IMAGES.length);
+  if (url?.startsWith(MANGADEX_IMAGES)) return MANGADEX_PROXY_PATH + url.slice(MANGADEX_IMAGES.length);
+  return url;
 }

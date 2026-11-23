@@ -79,6 +79,16 @@ const EnvSchema = z.object({
     .url()
     .refine((url) => url.startsWith('https://') || url.startsWith('http://127.0.0.1') || url.startsWith('http://localhost'), 'TMDB_API_URL must use https')
     .default('https://api.themoviedb.org/3'),
+  /** MangaDex API (no key needed). */
+  MANGADEX_API_URL: z
+    .url()
+    .refine((url) => url.startsWith('https://') || url.startsWith('http://127.0.0.1') || url.startsWith('http://localhost'), 'MANGADEX_API_URL must use https')
+    .default('https://api.mangadex.org'),
+  /** Set to "false" to hide the manga section. */
+  MANGA_ENABLED: z
+    .enum(['true', 'false'])
+    .default('true')
+    .transform((value) => value === 'true'),
   STREAM_MOVIE_TEMPLATE: mediaTemplate('movie'),
   STREAM_TV_TEMPLATE: mediaTemplate('tv'),
 });

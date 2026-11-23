@@ -71,6 +71,11 @@ All endpoints are `GET`, return JSON, and validate their inputs (400 with a clea
 | `/api/person/:id`                     | An actor or filmmaker and their movies and shows |
 | `/api/movie/:id/stream`, `/api/tv/:id/stream?season=&episode=` | Encoded embed URL (provider) |
 | `/api/anime/:id/stream?episode=&language=` | Encoded embed URL for one episode (provider) |
+| `/api/manga/list/:list?page=`         | MangaDex lists: `popular`, `latest`, `top`, `new` (English/Filipino chapters only) |
+| `/api/manga/search?q=&page=`          | Manga search                                |
+| `/api/manga/:id`                      | Manga details (MangaDex UUID)               |
+| `/api/manga/:id/chapters?lang=en\|fil` | Every readable chapter in one language, in reading order |
+| `/api/manga/chapter/:id`              | One chapter's page images (+ data-saver set) |
 
 Errors share one shape: `{ "error": { "code": "...", "message": "..." } }`.
 
@@ -233,3 +238,18 @@ and rate-limits on Netlify's `context.ip`.
 
 Anime data from AniList. Movie and TV data from TMDB. Nixhin is not affiliated with AniList or TMDB; this product
 uses the TMDB API but is not endorsed or certified by TMDB.
+
+## Manga (MangaDex)
+
+The Manga mode (`/manga`) reads from the public [MangaDex API](https://api.mangadex.org/docs/). No key or account
+is needed, so it is on by default (`MANGA_ENABLED=false` hides it).
+
+- Only titles rated `safe` or `suggestive` with English or Filipino chapters are listed.
+- The server sends its own User-Agent (MangaDex blocks browser-like ones) and stays under MangaDex's rate limit
+  (about 5 requests/second per IP), caching every response.
+- Covers and pages load through this site at `/img/md/*` (a Netlify proxy rule, and a Vite proxy in development) with
+  no Referer, so ISP blocks and MangaDex's hotlink check don't break them. If that copy fails, the reader falls back to
+  the MangaDex@Home node (`*.mangadex.network`, allowed in the CSP).
+- Each chapter credits its scanlation group and MangaDex. Chapters published on an official site (e.g. MANGA Plus)
+  link there instead.
+- Reading progress ("Continue reading") stays in the browser (`nixhin-manga-progress-v1`).

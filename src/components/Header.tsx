@@ -14,14 +14,12 @@ interface HeaderProps {
   readonly layout: Layout;
   /** What the site is browsing; the links, search and switch follow it. */
   readonly mode: Mode;
-  /** Shows the Anime / Movies / TV shows switch (movies & TV are configured on the server). */
-  readonly showModes: boolean;
+  /** The modes in the Anime / Movies / TV shows / Manga switch (movies & TV only when configured on the server). */
+  readonly modes: readonly Mode[];
   /** Goes to a path (a home or one of its `#sections`). */
   readonly onLink: (href: string) => void;
   readonly onSearch: (query: string) => void;
 }
-
-const MODES: readonly Mode[] = ['anime', 'movie', 'tv'];
 
 /** Width at which the mode switch, the section links and the search box all fit on one line. */
 const ROOMY_QUERY = '(min-width: 1400px)';
@@ -32,7 +30,8 @@ const subscribeRoomy = (onChange: () => void) => {
 };
 const isRoomy = () => window.matchMedia(ROOMY_QUERY).matches;
 
-export function Header({ layout, mode, showModes, onLink, onSearch }: HeaderProps) {
+export function Header({ layout, mode, modes, onLink, onSearch }: HeaderProps) {
+  const showModes = modes.length > 1;
   const wide = isWideLayout(layout);
   const roomy = useSyncExternalStore(subscribeRoomy, isRoomy, () => true);
   // With the mode switch in the bar, the section links move into the menu when space runs out.
@@ -72,7 +71,7 @@ export function Header({ layout, mode, showModes, onLink, onSearch }: HeaderProp
 
   const modeSwitch = showModes && (
     <nav aria-label="Catalog" className={`${styles.modes} ${wide ? '' : styles.modesRow}`}>
-      {MODES.map((item) => (
+      {modes.map((item) => (
         <a
           key={item}
           href={MODE_HOMES[item]}

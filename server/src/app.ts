@@ -8,10 +8,11 @@ import type { ContentfulStatusCode } from 'hono/utils/http-status';
 import type { ApiErrorBody, ApiErrorCode } from '../../shared/api.js';
 import type { Config } from './config.js';
 import { HttpError, UpstreamError } from './errors.js';
-import type { AnimeCatalog, MediaCatalog } from './catalog.js';
+import type { AnimeCatalog, MangaCatalog, MediaCatalog } from './catalog.js';
 import { silentLogger, type Logger } from './logger.js';
 import { clientIp, rateLimit } from './middleware/rateLimit.js';
 import { apiRoutes } from './routes/api.js';
+import { mangaRoutes } from './routes/manga.js';
 import { mediaRoutes } from './routes/media.js';
 import { EmbedStreams } from './stream/embed.js';
 import { MediaEmbedStreams } from './stream/mediaEmbed.js';
@@ -24,6 +25,8 @@ export interface AppDeps {
   /** Movies & TV (TMDB); anime-only when omitted. */
   readonly media?: MediaCatalog | null;
   readonly mediaStreams?: MediaEmbedStreams;
+  /** Manga (MangaDex); the manga routes answer 404 when omitted. */
+  readonly manga?: MangaCatalog | null;
   readonly logger?: Logger;
   readonly now?: () => number;
 }
@@ -42,6 +45,7 @@ export function createApp({
   streams = new EmbedStreams({ template: undefined, languages: [] }),
   media = null,
   mediaStreams = new MediaEmbedStreams({ movieTemplate: undefined, tvTemplate: undefined }),
+  manga = null,
   logger = silentLogger,
   now = Date.now,
 }: AppDeps): Hono {
@@ -100,6 +104,7 @@ export function createApp({
 
   app.route('/api', apiRoutes(catalog, streams));
   app.route('/api', mediaRoutes(media, mediaStreams));
+  app.route('/api', mangaRoutes(manga));
 
   app.notFound((c) => errorResponse(c, 404, 'NOT_FOUND', 'Route not found'));
 

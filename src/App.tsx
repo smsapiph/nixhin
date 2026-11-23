@@ -19,8 +19,12 @@ import { SearchPage } from './pages/SearchPage';
 import { MediaHomePage } from './pages/MediaHomePage';
 import { MediaPage } from './pages/MediaPage';
 import { MediaSearchPage } from './pages/MediaSearchPage';
+import { MangaHomePage } from './pages/MangaHomePage';
+import { MangaPage } from './pages/MangaPage';
+import { MangaReaderPage } from './pages/MangaReaderPage';
+import { MangaSearchPage } from './pages/MangaSearchPage';
 import { PersonPage } from './pages/PersonPage';
-import { MAX_QUERY_LENGTH, MODE_HOMES, animePath, homePath, mediaPath, modeForPath, searchPath } from './routes';
+import { MANGA_ID_PATTERN, MAX_QUERY_LENGTH, MODE_HOMES, animePath, homePath, mediaPath, modeForPath, searchPath, type Mode } from './routes';
 import type { SectionId } from './types';
 import styles from './App.module.css';
 
@@ -90,6 +94,7 @@ export function App() {
   const navigateTo = useNavigate();
   const { data: mediaConfig } = useMediaConfig();
   const mediaEnabled = mediaConfig?.enabled === true;
+  const modes: readonly Mode[] = mediaEnabled ? ['anime', 'movie', 'tv', 'manga'] : ['anime', 'manga'];
   // Movies & TV links still work while the config loads; the switch appears once it says yes.
   const mode = modeForPath(location.pathname, location.search);
   const modeHome = MODE_HOMES[mode];
@@ -128,7 +133,7 @@ export function App() {
 
   return (
     <div className={styles.app}>
-      <Header layout={layout} mode={mode} showModes={mediaEnabled} onLink={goTo} onSearch={search} />
+      <Header layout={layout} mode={mode} modes={modes} onLink={goTo} onSearch={search} />
 
       <div className={styles.content}>
         <Routes>
@@ -155,6 +160,9 @@ export function App() {
           <Route path="/movie/:id" element={<MediaRoute kind="movie" queue={queue} onOpen={openMedia} onBack={goBack} />} />
           <Route path="/tv/:id" element={<MediaRoute kind="tv" queue={queue} onOpen={openMedia} onBack={goBack} />} />
           <Route path="/person/:id" element={<PersonRoute onOpen={openMedia} onBack={goBack} />} />
+          <Route path="/manga" element={<MangaHomePage />} />
+          <Route path="/manga/:id" element={<MangaRoute onBack={goBack} />} />
+          <Route path="/manga/:id/read/:chapterId" element={<MangaReaderRoute onBack={goBack} />} />
           <Route path="/search" element={<SearchRoute onOpen={openAnime} onOpenMedia={openMedia} onBack={goBack} />} />
           <Route path="*" element={<NotFoundPage onHome={() => navigate('top')} />} />
         </Routes>
@@ -209,7 +217,22 @@ function SearchRoute({ onOpenMedia, ...props }: SearchRouteProps) {
   const query = (params.get('q') ?? '').trim().slice(0, MAX_QUERY_LENGTH);
   const type = params.get('type');
   const kind: MediaKind | null = type === 'movie' || type === 'tv' ? type : null;
-  if (!query) return <Navigate to={kind ? MODE_HOMES[kind] : homePath()} replace />;
+  if (!query) return <Navigate to={kind ? MODE_HOMES[kind] : type === 'manga' ? MODE_HOMES.manga : homePath()} replace />;
+  if (type === 'manga') return <MangaSearchPage key={`manga-${query}`} query={query} onBack={props.onBack} />;
   if (kind) return <MediaSearchPage key={`${kind}-${query}`} kind={kind} query={query} onOpen={onOpenMedia} onBack={props.onBack} />;
   return <SearchPage key={query} query={query} {...props} />;
+}
+
+/** `/manga/:id` — MangaDex ids are UUIDs. */
+function MangaRoute({ onBack }: { readonly onBack: () => void }) {
+  const { id } = useParams();
+  if (!id || !MANGA_ID_PATTERN.test(id)) return <NotFoundPage onHome={onBack} />;
+  return <MangaPage key={id} id={id} onBack={onBack} />;
+}
+
+/** `/manga/:id/read/:chapterId` — the reader. */
+function MangaReaderRoute({ onBack }: { readonly onBack: () => void }) {
+  const { id, chapterId } = useParams();
+  if (!id || !chapterId || !MANGA_ID_PATTERN.test(id) || !MANGA_ID_PATTERN.test(chapterId)) return <NotFoundPage onHome={onBack} />;
+  return <MangaReaderPage key={chapterId} mangaId={id} chapterId={chapterId} />;
 }

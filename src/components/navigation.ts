@@ -1,4 +1,4 @@
-import { MODE_HOMES, homePath, mediaHomePath, type Mode } from '../routes';
+import { MODE_HOMES, homePath, mangaHomePath, mediaHomePath, type Mode } from '../routes';
 import type { SectionId } from '../types';
 import type { IconName } from './Icon';
 
@@ -27,14 +27,21 @@ export interface NavLink {
   readonly section: string;
 }
 
-export const MODE_LABELS: Readonly<Record<Mode, string>> = { anime: 'Anime', movie: 'Movies', tv: 'TV shows' };
+export const MODE_LABELS: Readonly<Record<Mode, string>> = { anime: 'Anime', movie: 'Movies', tv: 'TV shows', manga: 'Manga' };
 export const MODE_SEARCH_LABELS: Readonly<Record<Mode, string>> = {
   anime: 'Search anime',
   movie: 'Search movies',
   tv: 'Search TV shows',
+  manga: 'Search manga',
 };
 
-const MEDIA_NAV: Readonly<Record<'movie' | 'tv', readonly NavLink[]>> = {
+const MEDIA_NAV: Readonly<Record<Exclude<Mode, 'anime'>, readonly NavLink[]>> = {
+  manga: [
+    { href: mangaHomePath('popular'), label: 'Popular', section: 'popular' },
+    { href: mangaHomePath('latest'), label: 'Latest updates', section: 'latest' },
+    { href: mangaHomePath('rated'), label: 'Top rated', section: 'rated' },
+    { href: mangaHomePath('new'), label: 'New titles', section: 'new' },
+  ],
   movie: [
     { href: mediaHomePath('movie', 'popular'), label: 'Popular', section: 'popular' },
     { href: mediaHomePath('movie', 'now'), label: 'Now in cinemas', section: 'now' },
@@ -71,6 +78,15 @@ export function tabsFor(mode: Mode): readonly Tab[] {
       { href: homePath('queue'), label: 'My queue', section: 'queue', icon: 'bookmark' },
     ];
   }
+  if (mode === 'manga') {
+    return [
+      { href: home, label: 'Home', section: 'top', icon: 'home' },
+      // Continue reading and Popular are near the top, so they belong to Home (TOP_SECTIONS).
+      { href: mangaHomePath('latest'), label: 'Latest', section: 'latest', icon: 'calendar' },
+      { href: mangaHomePath('rated'), label: 'Top rated', section: 'rated', icon: 'grid' },
+      { href: mangaHomePath('new'), label: 'New', section: 'new', icon: 'bookmark' },
+    ];
+  }
   const soon = mode === 'movie' ? { section: 'upcoming', label: 'Coming soon' } : { section: 'new', label: 'New' };
   return [
     { href: home, label: 'Home', section: 'top', icon: 'home' },
@@ -85,6 +101,7 @@ export const HOME_SECTIONS: Readonly<Record<Mode, readonly string[]>> = {
   anime: ['continue', 'trending', 'season', 'queue', 'browse', 'schedule'],
   movie: ['continue', 'popular', 'now', 'browse', 'upcoming', 'queue'],
   tv: ['continue', 'trending', 'new', 'browse', 'queue'],
+  manga: ['continue', 'popular', 'latest', 'rated', 'new'],
 };
 
 /** Sections that belong to a home's "Home" tab (the rows near the top). */

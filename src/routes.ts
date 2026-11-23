@@ -1,4 +1,4 @@
-import type { MediaKind } from '../shared/api';
+import type { MangaLanguage, MediaKind } from '../shared/api';
 import type { SectionId } from './types';
 
 /** URL builders, so every link and navigation agrees on the route shapes. */
@@ -18,11 +18,31 @@ export function animePath(id: number, options: { episode?: number; language?: st
   return `/anime/${id}${search ? `?${search}` : ''}`;
 }
 
-/** What the site is browsing: anime (the original site), movies or TV shows. */
-export type Mode = 'anime' | MediaKind;
+/** What the site is browsing: anime (the original site), movies, TV shows or manga. */
+export type Mode = 'anime' | MediaKind | 'manga';
 
 /** Home of each mode. */
-export const MODE_HOMES: Readonly<Record<Mode, string>> = { anime: '/', movie: '/movies', tv: '/tv' };
+export const MODE_HOMES: Readonly<Record<Mode, string>> = { anime: '/', movie: '/movies', tv: '/tv', manga: '/manga' };
+
+/** Sections of the Manga home, used as `#anchors`. */
+export type MangaSectionId = 'top' | 'continue' | 'popular' | 'latest' | 'rated' | 'new';
+
+export function mangaHomePath(section: MangaSectionId = 'top'): string {
+  return section === 'top' ? MODE_HOMES.manga : `${MODE_HOMES.manga}#${section}`;
+}
+
+/** MangaDex ids are lowercase UUIDs. */
+export const MANGA_ID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
+
+/** `/manga/:id`, or `/manga/:id?lang=fil` for the Filipino chapter list. */
+export function mangaPath(id: string, language?: MangaLanguage): string {
+  return language && language !== 'en' ? `/manga/${id}?lang=${language}` : `/manga/${id}`;
+}
+
+/** The reader: `/manga/:id/read/:chapterId`. */
+export function mangaReaderPath(mangaId: string, chapterId: string): string {
+  return `/manga/${mangaId}/read/${chapterId}`;
+}
 
 /** Sections of the Movies and TV homes, used as `#anchors`. */
 export type MediaSectionId = 'top' | 'continue' | 'popular' | 'now' | 'browse' | 'upcoming' | 'trending' | 'new' | 'queue';
@@ -53,7 +73,7 @@ export function personPath(id: number, from: MediaKind = 'movie'): string {
 }
 
 /** The page of any saved title (anime, movie or TV show). */
-export function titlePath(kind: Mode, id: number): string {
+export function titlePath(kind: 'anime' | MediaKind, id: number): string {
   return kind === 'anime' ? animePath(id) : mediaPath(kind, id);
 }
 
@@ -61,15 +81,16 @@ export function titlePath(kind: Mode, id: number): string {
 export function modeForPath(pathname: string, search = ''): Mode {
   if (pathname === '/movies' || pathname.startsWith('/movie/')) return 'movie';
   if (pathname === '/tv' || pathname.startsWith('/tv/')) return 'tv';
+  if (pathname === '/manga' || pathname.startsWith('/manga/')) return 'manga';
   if (pathname.startsWith('/person/')) return new URLSearchParams(search).get('from') === 'tv' ? 'tv' : 'movie';
   if (pathname === '/search') {
     const type = new URLSearchParams(search).get('type');
-    if (type === 'movie' || type === 'tv') return type;
+    if (type === 'movie' || type === 'tv' || type === 'manga') return type;
   }
   return 'anime';
 }
 
-/** `/search?q=…`, plus `&type=movie|tv` outside anime. */
+/** `/search?q=…`, plus `&type=movie|tv|manga` outside anime. */
 export function searchPath(query: string, mode: Mode = 'anime'): string {
   const params = new URLSearchParams({ q: query.trim().slice(0, MAX_QUERY_LENGTH) });
   if (mode !== 'anime') params.set('type', mode);

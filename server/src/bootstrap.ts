@@ -7,6 +7,8 @@ import { RequestScheduler } from './lib/requestScheduler.js';
 import { TtlCache } from './lib/ttlCache.js';
 import type { Logger } from './logger.js';
 import { EmbedStreams } from './stream/embed.js';
+import { MangaDexCatalog } from './mangadex/catalog.js';
+import { MangaDexClient } from './mangadex/client.js';
 import { MediaEmbedStreams } from './stream/mediaEmbed.js';
 import { TmdbCatalog } from './tmdb/catalog.js';
 import { TmdbClient } from './tmdb/client.js';
@@ -49,6 +51,27 @@ export function buildMediaCatalog(config: Config, logger: Logger): TmdbCatalog |
   });
 }
 
+/** The MangaDex manga catalog, or null when MANGA_ENABLED=false. */
+export function buildMangaCatalog(config: Config, logger: Logger): MangaDexCatalog | null {
+  if (!config.MANGA_ENABLED) return null;
+  const client = new MangaDexClient({
+    baseUrl: config.MANGADEX_API_URL,
+    timeoutMs: config.UPSTREAM_TIMEOUT_MS,
+    // MangaDex allows about 5 requests/second per IP (at-home: 40/minute); stay under both.
+    scheduler: new RequestScheduler({
+      rules: [
+        { limit: 4, windowMs: 1_000 },
+        { limit: 150, windowMs: 60_000 },
+      ],
+      maxQueue: 80,
+    }),
+    cache: new TtlCache<unknown>(1_500),
+  });
+  return new MangaDexCatalog(client, {
+    onInvalidItem: (issues) => logger.debug('skipped invalid MangaDex item', { issues }),
+  });
+}
+
 /** Wires the real AniList catalog and stream provider into the app. Shared by the Node server and Netlify. */
 export function buildApp(config: Config, logger: Logger): Hono {
   const catalog = buildCatalog(config, logger);
@@ -62,5 +85,8 @@ export function buildApp(config: Config, logger: Logger): Hono {
   const mediaStreams = new MediaEmbedStreams({ movieTemplate: config.STREAM_MOVIE_TEMPLATE, tvTemplate: config.STREAM_TV_TEMPLATE });
   logger.info(media ? 'movies & TV enabled' : 'movies & TV disabled (no TMDB_READ_TOKEN)');
 
-  return createApp({ config, catalog, streams, media, mediaStreams, logger });
+  const manga = buildMangaCatalog(config, logger);
+  logger.info(manga ? 'manga enabled' : 'manga disabled (MANGA_ENABLED=false)');
+
+  return createApp({ config, catalog, streams, media, mediaStreams, manga, logger });
 }
