@@ -82,10 +82,10 @@ describe('manga routes and images', () => {
     expect(modeForPath('/search', '?q=naruto&type=manga')).toBe('manga');
   });
 
-  it('loads MangaDex images directly, with this site as the second try', () => {
+  it('loads MangaDex images through this site, with MangaDex itself as the second try', () => {
     expect(imageCandidates('https://uploads.mangadex.org/covers/x/y.jpg.512.jpg')).toEqual([
-      'https://uploads.mangadex.org/covers/x/y.jpg.512.jpg',
       '/img/md/covers/x/y.jpg.512.jpg',
+      'https://uploads.mangadex.org/covers/x/y.jpg.512.jpg',
     ]);
     expect(imageCandidates('https://image.tmdb.org/t/p/w342/a.jpg')).toEqual(['/img/tmdb/w342/a.jpg']);
     expect(imageSrc('https://abc.mangadex.network/data/h/1.png')).toBe('https://abc.mangadex.network/data/h/1.png');

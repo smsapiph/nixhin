@@ -43,11 +43,13 @@ export default defineConfig({
       '/api': { target: apiTarget, changeOrigin: false },
       // Same as the /img/tmdb/* rule in netlify.toml (see src/lib/images.ts).
       '/img/tmdb': { target: 'https://image.tmdb.org', changeOrigin: true, rewrite: (path) => path.replace(/^\/img\/tmdb/, '/t/p') },
-      // Same as the /img/md/* rule in netlify.toml. No Referer, or MangaDex answers with its hotlink placeholder.
+      // Same as the /img/md/* function in production: no Referer, and a non-browser User-Agent (MangaDex refuses
+      // browser User-Agents arriving through a proxy).
       '/img/md': {
         target: 'https://uploads.mangadex.org',
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/img\/md/, ''),
+        headers: { 'User-Agent': 'nixhin-dev/0.1' },
         configure: (proxy) => (proxy as unknown as ProxyEvents).on('proxyReq', (request) => request.removeHeader('referer')),
       },
     },

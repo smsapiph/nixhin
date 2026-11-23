@@ -231,15 +231,15 @@ function ChapterSelect({ chapters, currentId, onChoose }: ChapterSelectProps) {
 type PageState = 'loading' | 'loaded' | 'failed';
 
 /**
- * One page image: tries uploads.mangadex.org, then the MangaDex@Home node, then this site's proxy, then offers a
+ * One page image: tries this site's /img/md/ copy, then the MangaDex@Home node, then uploads.mangadex.org, then offers a
  * retry (which starts over with cache-busted addresses). Focusable on TVs so the D-pad scrolls page by page.
  */
 function PageView({ page, index, count }: { readonly page: PageImage; readonly index: number; readonly count: number }) {
   const [attempt, setAttempt] = useState(0);
   const [round, setRound] = useState(0);
   const [state, setState] = useState<PageState>('loading');
-  const [direct, ...rest] = imageCandidates(page.url);
-  const candidates = [direct ?? page.url, page.fallbackUrl, ...rest];
+  const [proxied, ...rest] = imageCandidates(page.url);
+  const candidates = [proxied ?? page.url, page.fallbackUrl, ...rest];
   const base = candidates[attempt] ?? page.url;
   const src = round > 0 ? `${base}${base.includes('?') ? '&' : '?'}retry=${round}` : base;
 
