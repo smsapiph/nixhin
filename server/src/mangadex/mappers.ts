@@ -51,7 +51,7 @@ function altTitles(raw: RawManga, main: string): string[] {
   const titles: string[] = [];
   const all = [raw.attributes.title, ...(raw.attributes.altTitles ?? [])];
   for (const map of all) {
-    const value = pick(map, ['en', 'fil', 'ja-ro', 'ja', 'ko', 'zh']);
+    const value = pick(map, ['en', 'tl', 'ja-ro', 'ja', 'ko', 'zh']);
     if (value && !seen.has(value.toLowerCase())) {
       seen.add(value.toLowerCase());
       titles.push(value);
@@ -81,7 +81,7 @@ function description(raw: RawManga): string | null {
   const map = Object.fromEntries(
     Object.entries(raw.attributes.description).filter((entry): entry is [string, string] => typeof entry[1] === 'string'),
   );
-  const text = pick(map, ['en', 'fil']) ?? firstValue(map);
+  const text = pick(map, ['en', 'tl']) ?? firstValue(map);
   return text ? cleanDescription(text) : null;
 }
 

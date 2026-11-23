@@ -18,7 +18,7 @@ const rawManga = (overrides: Record<string, unknown> = {}) => ({
   type: 'manga',
   attributes: {
     title: { en: 'One Piece' },
-    altTitles: [{ ja: 'ワンピース' }, { 'ja-ro': 'One Piece' }, { fil: 'Isang Piraso' }],
+    altTitles: [{ ja: 'ワンピース' }, { 'ja-ro': 'One Piece' }, { tl: 'Isang Piraso' }],
     description: { en: 'Gol D. Roger was known as the **Pirate King**.\n\n---\n[Official](https://example.com)' },
     links: { engtl: 'https://mangaplus.shueisha.co.jp/titles/100020', raw: 'http://insecure.example', bw: 'series/1234' },
     status: 'ongoing',
@@ -31,7 +31,7 @@ const rawManga = (overrides: Record<string, unknown> = {}) => ({
       { attributes: { name: { en: 'Pirates' }, group: 'theme' } },
       { attributes: { name: { en: 'Long Strip' }, group: 'format' } },
     ],
-    availableTranslatedLanguages: ['en', 'es-la', null, 'fil'],
+    availableTranslatedLanguages: ['en', 'es-la', null, 'tl', 'fil'],
     ...overrides,
   },
   relationships: [
@@ -108,7 +108,7 @@ describe('MangaDexCatalog', () => {
     const url = recorded.urls[0];
     expect(url?.pathname).toBe('/manga');
     expect(url?.searchParams.getAll('contentRating[]')).toEqual(['safe', 'suggestive']);
-    expect(url?.searchParams.getAll('availableTranslatedLanguage[]')).toEqual(['en', 'fil']);
+    expect(url?.searchParams.getAll('availableTranslatedLanguage[]')).toEqual(['en', 'tl']);
     expect(url?.searchParams.get('order[followedCount]')).toBe('desc');
     expect(url?.searchParams.get('hasAvailableChapters')).toBe('true');
     expect(url?.searchParams.getAll('includes[]')).toEqual(['cover_art']);
@@ -123,7 +123,7 @@ describe('MangaDexCatalog', () => {
         status: 'ongoing',
         year: 1997,
         tags: ['Action', 'Pirates'],
-        languages: ['en', 'fil'],
+        languages: ['en', 'tl'],
       },
     ]);
   });
@@ -255,11 +255,11 @@ describe('manga routes', () => {
 
   it('routes valid requests to the catalog', async () => {
     expect((await app.request('/api/manga/list/latest?page=2')).status).toBe(200);
-    expect((await app.request(`/api/manga/${MANGA_ID}/chapters?lang=fil`)).status).toBe(200);
+    expect((await app.request(`/api/manga/${MANGA_ID}/chapters?lang=tl`)).status).toBe(200);
     expect((await app.request(`/api/manga/chapter/${CHAPTER_ID}`)).status).toBe(200);
     expect((await app.request(`/api/manga/${MANGA_ID}`)).status).toBe(200);
     expect((await app.request('/api/manga/search?q=naruto')).status).toBe(200);
-    expect(calls).toEqual([`list:latest:2`, `chapters:${MANGA_ID}:fil`, `chapter:${CHAPTER_ID}`, 'search:naruto']);
+    expect(calls).toEqual([`list:latest:2`, `chapters:${MANGA_ID}:tl`, `chapter:${CHAPTER_ID}`, 'search:naruto']);
   });
 
   it('rejects bad ids, lists and languages', async () => {
@@ -272,5 +272,12 @@ describe('manga routes', () => {
   it('answers 404 when manga is off', async () => {
     const off = createApp({ config: { ALLOWED_ORIGINS: [], TRUST_PROXY: false, RATE_LIMIT_PER_MINUTE: 1000 }, catalog: {} as AnimeCatalog });
     expect((await off.request(`/api/manga/${MANGA_ID}`)).status).toBe(404);
+  });
+});
+
+describe('MANGA_LANGUAGES', () => {
+  it('uses codes MangaDex accepts (it rejects anything else with HTTP 400)', async () => {
+    const { MANGA_LANGUAGES } = await import('../../../shared/api.js');
+    for (const language of MANGA_LANGUAGES) expect(language).toMatch(/^[a-z]{2}(-[a-z]{2})?$/);
   });
 });

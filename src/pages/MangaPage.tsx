@@ -227,7 +227,7 @@ function Chapters({ manga, language, onLanguage }: ChaptersProps) {
         <EmptyNotice>
           No {LANGUAGE_LABELS[language]} chapters on MangaDex yet.
           {manga.links.length > 0 ? ' Try the official links above.' : ''}
-          {language === 'fil' && manga.languages.includes('en') ? ' English chapters are available.' : ''}
+          {language === 'tl' && manga.languages.includes('en') ? ' English chapters are available.' : ''}
         </EmptyNotice>
       ) : (
         <>

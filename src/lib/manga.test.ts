@@ -63,7 +63,7 @@ describe('manga progress', () => {
 
   it('moves the latest read to the front', () => {
     const other = { ...entry, id: id(7) } as const;
-    const list = recordReading(recordReading([], { ...entry, language: 'en' }), { ...other, language: 'fil' });
+    const list = recordReading(recordReading([], { ...entry, language: 'en' }), { ...other, language: 'tl' });
     expect(recordReading(list, { ...entry, language: 'en', chapter: '6' }).map((item) => [item.id, item.chapter])).toEqual([
       [id(1), '6'],
       [id(7), '5'],
@@ -74,7 +74,7 @@ describe('manga progress', () => {
 describe('manga routes and images', () => {
   it('builds and recognises manga paths', () => {
     expect(mangaPath(id(1))).toBe(`/manga/${id(1)}`);
-    expect(mangaPath(id(1), 'fil')).toBe(`/manga/${id(1)}?lang=fil`);
+    expect(mangaPath(id(1), 'tl')).toBe(`/manga/${id(1)}?lang=tl`);
     expect(mangaReaderPath(id(1), id(2))).toBe(`/manga/${id(1)}/read/${id(2)}`);
     expect(modeForPath('/manga')).toBe('manga');
     expect(modeForPath(`/manga/${id(1)}/read/${id(2)}`)).toBe('manga');
