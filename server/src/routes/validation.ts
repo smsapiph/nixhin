@@ -1,5 +1,7 @@
 import { z } from 'zod';
 import {
+  MANGA_LANGUAGES,
+  MANGA_LISTS,
   MOVIE_LISTS,
   SEARCH_FORMATS,
   SEARCH_MIN_YEAR,
@@ -118,4 +120,19 @@ export const SeasonParams = z.object({
 export const TvStreamQuery = z.object({
   season: intInRange(0, 500),
   episode: intInRange(1, 5000),
+});
+
+/* Manga */
+
+/** MangaDex ids are lowercase UUIDs. */
+const uuid = z
+  .string()
+  .regex(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/, 'must be a MangaDex id');
+
+export const MangaIdParams = z.object({ id: uuid });
+
+export const MangaListParams = z.object({ list: z.enum(MANGA_LISTS) });
+
+export const MangaChaptersQuery = z.object({
+  lang: z.enum(MANGA_LANGUAGES).default('en'),
 });

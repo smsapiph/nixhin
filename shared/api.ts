@@ -274,3 +274,84 @@ export interface MediaGenre {
   readonly id: number;
   readonly name: string;
 }
+
+/* ------------------------------------------------------------------ Manga (MangaDex) */
+
+/** Chapter languages the site offers, in MangaDex codes: English and Filipino. */
+export const MANGA_LANGUAGES = ['en', 'fil'] as const;
+export type MangaLanguage = (typeof MANGA_LANGUAGES)[number];
+
+/** Lists shown on the Manga home (`/api/manga/list/:list`). */
+export const MANGA_LISTS = ['popular', 'latest', 'top', 'new'] as const;
+export type MangaList = (typeof MANGA_LISTS)[number];
+
+export type MangaStatus = 'ongoing' | 'completed' | 'hiatus' | 'cancelled';
+
+/** Enough to render a manga card. Ids are MangaDex UUIDs. */
+export interface MangaSummary {
+  readonly id: string;
+  readonly title: string;
+  /** Cover image (https://uploads.mangadex.org/…), or null. */
+  readonly coverUrl: string | null;
+  readonly status: MangaStatus | null;
+  readonly year: number | null;
+  readonly tags: readonly string[];
+  /** Which of the site's languages have chapters. */
+  readonly languages: readonly MangaLanguage[];
+}
+
+export interface MangaLink {
+  readonly label: string;
+  readonly url: string;
+}
+
+export interface MangaDetail extends MangaSummary {
+  readonly altTitles: readonly string[];
+  readonly description: string | null;
+  readonly authors: readonly string[];
+  readonly artists: readonly string[];
+  /** shounen, seinen, … */
+  readonly demographic: string | null;
+  /** Last chapter number when the series is finished, if known. */
+  readonly lastChapter: string | null;
+  /** Official places to read or buy it. */
+  readonly links: readonly MangaLink[];
+}
+
+export interface MangaChapter {
+  readonly id: string;
+  /** Chapter number as text ("12", "12.5"), or null for oneshots. */
+  readonly chapter: string | null;
+  readonly volume: string | null;
+  readonly title: string | null;
+  readonly language: MangaLanguage;
+  readonly pages: number;
+  /** ISO date the chapter became readable. */
+  readonly publishedAt: string;
+  /** Scanlation groups (credited in the reader). */
+  readonly groups: readonly string[];
+  /** Set when the chapter is only readable on an official site (e.g. MANGA Plus). */
+  readonly externalUrl: string | null;
+}
+
+export interface MangaPage {
+  /** Through this site's image proxy (uploads.mangadex.org). */
+  readonly url: string;
+  /** The MangaDex@Home node, tried when `url` fails. */
+  readonly fallbackUrl: string;
+}
+
+/** One chapter, ready to read. */
+export interface MangaChapterPages {
+  readonly id: string;
+  readonly mangaId: string;
+  readonly chapter: string | null;
+  readonly volume: string | null;
+  readonly title: string | null;
+  readonly language: MangaLanguage;
+  readonly groups: readonly string[];
+  readonly externalUrl: string | null;
+  readonly pages: readonly MangaPage[];
+  /** Smaller, compressed images (for slow connections). */
+  readonly pagesDataSaver: readonly MangaPage[];
+}
