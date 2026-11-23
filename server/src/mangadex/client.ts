@@ -98,9 +98,13 @@ export class MangaDexClient {
           throw new UpstreamError('bad_response', 'MangaDex returned invalid JSON', { cause });
         }
       }
+      if (response.status === 400) {
+        // MangaDex says which parameter it rejected; keep that for the server log (never shown to readers).
+        const detail = await errorDetail(response);
+        throw new UpstreamError('bad_request', `MangaDex rejected ${url.pathname}${url.search} (HTTP 400): ${detail}`);
+      }
       await response.body?.cancel();
       if (response.status === 404) throw new UpstreamError('not_found', 'MangaDex resource not found');
-      if (response.status === 400) throw new UpstreamError('bad_request', 'MangaDex rejected the request (HTTP 400)');
       // 403: MangaDex (or its CDN) refused this server, e.g. a temporary block. Nothing the reader can fix.
       if (retryable || response.status === 403) {
         throw new UpstreamError('unavailable', `MangaDex unavailable (HTTP ${response.status})`);
@@ -127,5 +131,16 @@ export class MangaDexClient {
       const message = cause instanceof QueueFullError ? 'Upstream queue full' : 'MangaDex request failed';
       throw new UpstreamError('unavailable', message, { cause });
     }
+  }
+}
+
+/** The `detail` lines of a MangaDex error body (`{ result: "error", errors: [{ detail }] }`), shortened. */
+async function errorDetail(response: Response): Promise<string> {
+  try {
+    const body = (await response.json()) as { errors?: { detail?: unknown; context?: unknown }[] };
+    const details = (body.errors ?? []).map((error) => [error.detail, error.context].filter((part) => typeof part === 'string').join(' '));
+    return details.filter(Boolean).join('; ').slice(0, 500) || 'no detail';
+  } catch {
+    return 'no detail';
   }
 }
