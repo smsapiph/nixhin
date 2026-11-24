@@ -91,3 +91,24 @@ describe('manga routes and images', () => {
     expect(imageSrc('https://abc.mangadex.network/data/h/1.png')).toBe('https://abc.mangadex.network/data/h/1.png');
   });
 });
+
+describe('paged reader', () => {
+  it('turns pages the way the book reads', async () => {
+    const { arrowStep, swipeStep, tapAction, clampPage } = await import('./readerNav');
+    expect(arrowStep('left', 'rtl')).toBe(1);
+    expect(arrowStep('right', 'rtl')).toBe(-1);
+    expect(arrowStep('right', 'ltr')).toBe(1);
+    // rtl: swipe right = next; ltr: swipe left = next.
+    expect(swipeStep(120, 10, 'rtl')).toBe(1);
+    expect(swipeStep(-120, 10, 'rtl')).toBe(-1);
+    expect(swipeStep(-120, 10, 'ltr')).toBe(1);
+    expect(swipeStep(10, 5, 'ltr')).toBeNull();
+    expect(swipeStep(30, 200, 'ltr')).toBe(0);
+    expect(tapAction(0.1, 'rtl')).toBe(1);
+    expect(tapAction(0.9, 'rtl')).toBe(-1);
+    expect(tapAction(0.9, 'ltr')).toBe(1);
+    expect(tapAction(0.5, 'ltr')).toBe('menu');
+    expect(clampPage(-1, 10)).toBe(0);
+    expect(clampPage(11, 10)).toBe(10);
+  });
+});

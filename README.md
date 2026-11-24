@@ -254,3 +254,6 @@ is needed, so it is on by default (`MANGA_ENABLED=false` hides it).
 - Each chapter credits its scanlation group and MangaDex. Chapters published on an official site (e.g. MANGA Plus)
   link there instead.
 - Reading progress ("Continue reading") stays in the browser (`nixhin-manga-progress-v1`).
+- The reader scrolls (webtoon style) or shows one page at a time (swipe, tap the sides, ←/→ or the TV remote's
+  D-pad; right-to-left or left-to-right), and has a full-screen mode that stays on between chapters. These choices
+  stay in the browser (`nixhin-manga-reader-v1`).
