@@ -205,33 +205,3 @@
   justify-content: center;
   margin-top: 1.2em;
 }
-
-/* Home page */
-
-.continueItem {
-  display: flex;
-  flex: 0 0 var(--card-width);
-  flex-direction: column;
-  width: var(--card-width);
-  scroll-snap-align: start;
-}
-
-.forget {
-  align-self: flex-start;
-  margin-top: 0.2em;
-  padding: 0.2em 0;
-  border: 0;
-  background: transparent;
-  color: var(--color-muted);
-  font-size: 0.8em;
-}
-
-.source {
-  margin-top: var(--section-gap);
-  color: var(--color-muted);
-  font-size: 0.85em;
-}
-
-.source a {
-  color: inherit;
-}

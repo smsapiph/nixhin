@@ -1,4 +1,4 @@
-import type { AnimeDetail, MediaDetail, MediaKind } from '../../../shared/api.js';
+import type { AnimeDetail, MangaDetail, MediaDetail, MediaKind } from '../../../shared/api.js';
 
 /**
  * Link-preview metadata for share links. Crawlers (Facebook/Messenger, X, Discord, …) do not
@@ -221,6 +221,72 @@ export function mediaMeta(detail: MediaDetail, link: MediaLink, siteUrl: string)
     description,
     url,
     image: `${siteUrl}${mediaCardPath(link)}`,
+    imageAlt: title.replace(` · ${SITE_NAME}`, ''),
+    type: 'website',
+  };
+}
+
+/* ------------------------------------------------------------------ Manga */
+
+const UUID = '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}';
+/** Chapter numbers as MangaDex writes them: "12", "12.5". */
+const CHAPTER_NUMBER = /^\d{1,5}(?:\.\d{1,2})?$/;
+
+export interface MangaLink {
+  readonly id: string;
+  /** Set on reader links (`/manga/:id/read/:chapterId`). */
+  readonly chapterId: string | null;
+}
+
+/** Parses `/manga/:id` and `/manga/:id/read/:chapterId`; null for anything else. */
+export function parseMangaLink(url: URL): MangaLink | null {
+  const match = new RegExp(`^/manga/(${UUID})(?:/read/(${UUID}))?/?$`).exec(url.pathname);
+  if (!match?.[1]) return null;
+  return { id: match[1], chapterId: match[2] ?? null };
+}
+
+export interface MangaCardLink {
+  readonly id: string;
+  /** Chapter number for the badge, or null. */
+  readonly chapter: string | null;
+}
+
+/** Parses the share-card URL `/og/manga/:id.jpg?ch=12`. */
+export function parseMangaCardLink(url: URL): MangaCardLink | null {
+  const match = new RegExp(`^/og/manga/(${UUID})\\.jpg$`).exec(url.pathname);
+  if (!match?.[1]) return null;
+  const chapter = url.searchParams.get('ch');
+  return { id: match[1], chapter: chapter && CHAPTER_NUMBER.test(chapter) ? chapter : null };
+}
+
+export function mangaCardPath(link: MangaCardLink): string {
+  return `/og/manga/${link.id}.jpg${link.chapter !== null && CHAPTER_NUMBER.test(link.chapter) ? `?ch=${link.chapter}` : ''}`;
+}
+
+/**
+ * e.g. "Read One Piece Ch. 1095 · Nixhin". `chapter` is the reader link's chapter number when it could be
+ * looked up (null for the manga page, a oneshot or a failed lookup).
+ */
+export function mangaMeta(manga: MangaDetail, link: MangaLink, chapter: string | null, siteUrl: string): PageMeta {
+  const url = `${siteUrl}/manga/${manga.id}${link.chapterId ? `/read/${link.chapterId}` : ''}`;
+  const number = link.chapterId && chapter !== null && CHAPTER_NUMBER.test(chapter) ? chapter : null;
+  let title: string;
+  let description: string;
+  if (number !== null) {
+    title = `Read ${manga.title} Chapter ${number} · ${SITE_NAME}`;
+    const lead = `Chapter ${number} of ${manga.title}. Free on ${SITE_NAME}, no account needed.`;
+    description = manga.description ? truncate(`${lead} ${manga.description}`, DESCRIPTION_LIMIT) : lead;
+  } else {
+    title = `Read ${manga.title} · ${SITE_NAME}`;
+    description = manga.description
+      ? truncate(manga.description, DESCRIPTION_LIMIT)
+      : `Read ${manga.title} free on ${SITE_NAME}. No account needed.`;
+  }
+  return {
+    title,
+    description,
+    url,
+    image: `${siteUrl}${mangaCardPath({ id: manga.id, chapter: number })}`,
     imageAlt: title.replace(` · ${SITE_NAME}`, ''),
     type: 'website',
   };

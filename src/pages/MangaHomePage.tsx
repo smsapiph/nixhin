@@ -3,15 +3,14 @@ import { useMangaList } from '../api/manga';
 import { HomeSection } from '../components/home/HomeSections';
 import { MangaCard, MangaGrid, MangaRowSection } from '../components/manga/MangaCards';
 import { flattenPages } from '../lib/mangaFormat';
-import { ScrollRow, TitleLines } from '../components/ui';
+import { Muted, ScrollRow, TitleLines } from '../components/ui';
 import { useDocumentTitle } from '../hooks/useDocumentTitle';
 import { useStore } from '../hooks/useStore';
 import { chapterNumber, LANGUAGE_LABELS } from '../lib/mangaChapters';
 import { mangaProgressStore, removeReading } from '../lib/mangaProgress';
 import { mangaPath, mangaReaderPath } from '../routes';
-import homeStyles from '../components/home/HomeSections.module.css';
+import continueStyles from '../components/home/ContinueWatching.module.css';
 import styles from './HomePage.module.css';
-import mangaStyles from './MangaPage.module.css';
 
 const hrefFor = (manga: MangaSummary) => mangaPath(manga.id);
 
@@ -71,13 +70,6 @@ export function MangaHomePage() {
           hrefFor={hrefFor}
         />
       </HomeSection>
-      <p className={mangaStyles.source}>
-        Manga from{' '}
-        <a href="https://mangadex.org" target="_blank" rel="noreferrer noopener">
-          MangaDex
-        </a>
-        , translated by fan scanlation groups (credited in each chapter).
-      </p>
     </main>
   );
 }
@@ -87,22 +79,30 @@ function ContinueReading() {
   const items = useStore(mangaProgressStore);
   if (items.length === 0) return null;
   return (
-    <HomeSection id="continue" eyebrow="Continue reading · 続きを読む" title="Pick up where you left off">
-      <ScrollRow className={homeStyles.paddedRow}>
+    <HomeSection
+      id="continue"
+      eyebrow="Continue reading · 続きを読む"
+      title="Pick up where you left off"
+      aside={<Muted>Saved on this device</Muted>}
+    >
+      <ScrollRow>
         {items.map((entry) => (
-          <div key={entry.id} className={mangaStyles.continueItem}>
+          <div key={entry.id} className={continueStyles.item}>
             <MangaCard href={mangaReaderPath(entry.id, entry.chapterId)} title={entry.title} coverUrl={entry.coverUrl} layout="grid">
               <TitleLines
                 title={entry.title}
                 subtitle={`${chapterNumber({ chapter: entry.chapter, volume: null, title: null })} · ${LANGUAGE_LABELS[entry.language]}`}
               />
             </MangaCard>
+            {/* Same × as Continue watching on the anime, movie and TV homes. */}
             <button
               type="button"
-              className={mangaStyles.forget}
+              className={continueStyles.remove}
+              aria-label={`Remove ${entry.title} from Continue reading`}
+              title="Remove"
               onClick={() => mangaProgressStore.set((list) => removeReading(list, entry.id))}
             >
-              Remove<span className="sr-only"> {entry.title} from Continue reading</span>
+              <span aria-hidden="true">×</span>
             </button>
           </div>
         ))}

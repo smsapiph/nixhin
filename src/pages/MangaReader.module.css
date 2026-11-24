@@ -54,8 +54,44 @@
 
 .tools {
   display: flex;
+  flex-wrap: wrap;
+  align-items: center;
   justify-content: center;
-  margin-top: 0.6em;
+  gap: 0.5em 0.8em;
+  margin-top: 0.8em;
+}
+
+.segmented {
+  display: inline-flex;
+  padding: 0.2em;
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-pill);
+}
+
+.segmented button {
+  min-height: calc(var(--tap-size) - 0.4em);
+  padding: 0.25em 0.9em;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: transparent;
+  color: var(--color-ink-soft);
+  font-size: 0.9em;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.segmented button[aria-pressed='true'] {
+  background: var(--color-ink);
+  color: var(--color-bg);
+}
+
+.fullscreen {
+  min-height: var(--tap-size);
+  padding: 0.3em 1.1em;
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-pill);
+  background: transparent;
+  font-weight: 500;
 }
 
 .toggle {
@@ -180,4 +216,216 @@
   font-family: var(--font-serif);
   font-weight: 600;
   font-size: 1.2em;
+}
+
+/* ---------------------------------------------------------------- Page by page */
+
+.paged {
+  position: relative;
+  overflow: hidden;
+  user-select: none;
+  -webkit-user-select: none;
+  /* Horizontal swipes turn pages; vertical drags and pinch zoom stay with the browser. */
+  touch-action: pan-y pinch-zoom;
+  cursor: pointer;
+}
+
+.pagedInline {
+  height: calc(100dvh - 9em);
+  min-height: 22em;
+  margin: 0 calc(-1 * var(--page-pad));
+  background: var(--color-surface);
+}
+
+.pagedImmersive {
+  flex: 1;
+  min-height: 0;
+}
+
+.paged .pageFrame {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  max-width: none;
+}
+
+.paged .pending {
+  min-height: 0;
+  background: transparent;
+}
+
+.paged .image {
+  width: auto;
+  height: auto;
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+
+.hiddenPage {
+  visibility: hidden;
+}
+
+.counter {
+  position: absolute;
+  bottom: 0.7em;
+  left: 50%;
+  padding: 0.15em 0.75em;
+  border-radius: var(--radius-pill);
+  background: rgb(0 0 0 / 0.6);
+  color: #fff;
+  font-size: 0.8em;
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+
+.pageControls {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.6em;
+  margin-top: 0.8em;
+}
+
+.endPanel {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1em;
+  padding: 1em;
+  text-align: center;
+}
+
+/* ---------------------------------------------------------------- Full screen */
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  background: #0d0d0d;
+  color: #eee;
+  outline: none;
+}
+
+/* Page by page: the page fills the screen, under the controls. */
+.overlayPaged {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.overlay .pages {
+  margin: 0;
+}
+
+.overlay .pending {
+  background: #1a1a1a;
+}
+
+.bar {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4em 0.6em;
+  padding: max(0.4em, env(safe-area-inset-top)) max(0.6em, env(safe-area-inset-right)) 0.4em max(0.6em, env(safe-area-inset-left));
+  background: rgb(13 13 13 / 0.88);
+  color: #eee;
+  transition: opacity 0.2s, transform 0.2s;
+}
+
+.overlayPaged .bar {
+  position: absolute;
+  inset: 0 0 auto;
+}
+
+.barHidden {
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(-100%);
+}
+
+.bar .tools {
+  margin: 0;
+  justify-content: flex-start;
+  font-size: 0.85em;
+}
+
+.bar .segmented {
+  border-color: rgb(255 255 255 / 0.25);
+}
+
+.bar .segmented button,
+.bar .toggle {
+  color: #ccc;
+}
+
+.bar .segmented button[aria-pressed='true'] {
+  background: #eee;
+  color: #111;
+}
+
+.barButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: var(--tap-size);
+  min-height: var(--tap-size);
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: transparent;
+  color: inherit;
+  font-size: 1.2em;
+}
+
+.barButton:disabled {
+  opacity: 0.35;
+}
+
+.barTitle {
+  display: flex;
+  flex: 1 1 8em;
+  flex-direction: column;
+  min-width: 0;
+  font-weight: 600;
+  line-height: 1.2;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.barSeries {
+  overflow: hidden;
+  color: #aaa;
+  font-size: 0.75em;
+  font-weight: 500;
+  text-overflow: ellipsis;
+}
+
+.overlay .counter {
+  bottom: max(0.7em, env(safe-area-inset-bottom));
+}
+
+.overlayEnd {
+  position: relative;
+  min-height: 40vh;
+}
+
+/* Light buttons on the dark full-screen background. */
+.overlay .endPanel button {
+  background: #eee;
+  color: #111;
+}
+
+.overlay .endTitle {
+  color: #eee;
 }

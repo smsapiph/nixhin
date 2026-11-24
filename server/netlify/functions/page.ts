@@ -1,19 +1,21 @@
-import { buildCatalog, buildMediaCatalog } from '../../src/bootstrap.js';
+import { buildCatalog, buildMangaCatalog, buildMediaCatalog } from '../../src/bootstrap.js';
 import { loadConfig } from '../../src/config.js';
 import { createLogger } from '../../src/logger.js';
 import {
   animeMeta,
   injectMeta,
   isCrawler,
+  mangaMeta,
   mediaMeta,
   parseAnimeLink,
+  parseMangaLink,
   parseMediaLink,
   renderMetaTags,
   type PageMeta,
 } from '../../src/seo/pageMeta.js';
 
 /**
- * Serves the SPA shell for `/anime/*`, `/movie/*` and `/tv/*`, with per-title link-preview tags for crawlers
+ * Serves the SPA shell for `/anime/*`, `/movie/*`, `/tv/*` and `/manga/*`, with per-title link-preview tags for crawlers
  * (e.g. "Watch Black Clover Episode 5" + its banner). Browsers get the page unchanged.
  */
 
@@ -21,6 +23,7 @@ const appConfig = loadConfig({ ...process.env, NODE_ENV: 'production' });
 const logger = createLogger('info');
 const catalog = buildCatalog(appConfig, logger);
 const media = buildMediaCatalog(appConfig, logger);
+const manga = buildMangaCatalog(appConfig, logger);
 
 /** Crawlers give up after a few seconds; better default tags than no preview. */
 const LOOKUP_TIMEOUT_MS = 4_000;
@@ -114,7 +117,19 @@ async function pageMeta(url: URL): Promise<PageMeta | null> {
     );
     return mediaMeta(detail, mediaLink, siteUrl);
   }
+  const mangaLink = parseMangaLink(url);
+  if (mangaLink && manga) {
+    // The chapter number is a nice-to-have: without it the preview is for the series.
+    const [detail, chapter] = await Promise.all([
+      withTimeout(manga.manga(mangaLink.id), LOOKUP_TIMEOUT_MS),
+      mangaLink.chapterId
+        ? withTimeout(manga.chapter(mangaLink.chapterId), LOOKUP_TIMEOUT_MS).catch(() => null)
+        : Promise.resolve(null),
+    ]);
+    const number = chapter && chapter.mangaId === detail.id ? chapter.chapter : null;
+    return mangaMeta(detail, mangaLink, number, siteUrl);
+  }
   return null;
 }
 
-export const config = { path: ['/anime/*', '/movie/*', '/tv/*'] };
+export const config = { path: ['/anime/*', '/movie/*', '/tv/*', '/manga/*'] };

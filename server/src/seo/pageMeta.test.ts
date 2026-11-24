@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import type { AnimeDetail, MediaDetail } from '../../../shared/api.js';
+import type { AnimeDetail, MangaDetail, MediaDetail } from '../../../shared/api.js';
+import { mangaCardContent } from './ogCard.js';
 import {
   META_END,
   META_START,
@@ -7,10 +8,13 @@ import {
   cardPath,
   injectMeta,
   isCrawler,
+  mangaMeta,
   mediaCardPath,
   mediaMeta,
   parseAnimeLink,
   parseCardLink,
+  parseMangaCardLink,
+  parseMangaLink,
   parseMediaCardLink,
   parseMediaLink,
   renderMetaTags,
@@ -144,5 +148,59 @@ describe('media links', () => {
     expect(mediaMeta(detail, { kind: 'movie', id: 126308, season: null, episode: null }, 'https://n.test').title).toBe(
       'Watch Shōgun (2024) · Nixhin',
     );
+  });
+});
+
+describe('manga links', () => {
+  const ID = '32d76d19-8a05-4db0-9fc2-e0b0648fe9d0';
+  const CH = '0b4ddc4e-3e5d-4b2e-9a54-4f0e1a3b9d11';
+  const manga: MangaDetail = {
+    id: ID,
+    title: 'Frieren',
+    coverUrl: `https://uploads.mangadex.org/covers/${ID}/a.jpg.512.jpg`,
+    status: 'ongoing',
+    year: 2020,
+    tags: ['Fantasy'],
+    languages: ['en'],
+    altTitles: ['葬送のフリーレン', '장송의 프리렌'],
+    description: 'An elf mage outlives her party.',
+    authors: [],
+    artists: [],
+    demographic: 'shounen',
+    lastChapter: null,
+    links: [],
+  };
+
+  it('parses manga and reader links, and only those', () => {
+    expect(parseMangaLink(new URL(`https://x.y/manga/${ID}`))).toEqual({ id: ID, chapterId: null });
+    expect(parseMangaLink(new URL(`https://x.y/manga/${ID}/read/${CH}`))).toEqual({ id: ID, chapterId: CH });
+    expect(parseMangaLink(new URL('https://x.y/manga'))).toBeNull();
+    expect(parseMangaLink(new URL('https://x.y/manga/123'))).toBeNull();
+    expect(parseMangaCardLink(new URL(`https://x.y/og/manga/${ID}.jpg?ch=12.5`))).toEqual({ id: ID, chapter: '12.5' });
+    expect(parseMangaCardLink(new URL(`https://x.y/og/manga/${ID}.jpg?ch=<b>`))).toEqual({ id: ID, chapter: null });
+  });
+
+  it('describes the series or a chapter and points at the share card', () => {
+    const series = mangaMeta(manga, { id: ID, chapterId: null }, null, 'https://nixhin.example');
+    expect(series.title).toBe('Read Frieren · Nixhin');
+    expect(series.url).toBe(`https://nixhin.example/manga/${ID}`);
+    expect(series.image).toBe(`https://nixhin.example/og/manga/${ID}.jpg`);
+    const chapter = mangaMeta(manga, { id: ID, chapterId: CH }, '12', 'https://nixhin.example');
+    expect(chapter.title).toBe('Read Frieren Chapter 12 · Nixhin');
+    expect(chapter.url).toBe(`https://nixhin.example/manga/${ID}/read/${CH}`);
+    expect(chapter.image).toBe(`https://nixhin.example/og/manga/${ID}.jpg?ch=12`);
+    expect(chapter.description).toContain('Chapter 12 of Frieren.');
+  });
+
+  it('builds the card text', () => {
+    expect(mangaCardContent(manga, '12')).toEqual({
+      title: 'Frieren',
+      native: '葬送のフリーレン',
+      badge: 'CHAPTER 12',
+      language: null,
+      details: ['Manga', '2020', 'Ongoing', 'Fantasy'],
+      action: 'Read free',
+    });
+    expect(mangaCardContent({ ...manga, altTitles: ['장송의 프리렌'] }, null).native).toBeNull();
   });
 });
