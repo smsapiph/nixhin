@@ -16,14 +16,7 @@ import { RawAtHome, RawChapter, RawCollection, RawEntity, RawManga } from './sch
 
 const MINUTE = 60_000;
 const HOUR = 60 * MINUTE;
-/**
- * Titles asked for per page. A third more than a page of cards: series whose chapters are all on an official
- * site (no pages here) are dropped afterwards, so about 24 remain.
- */
-export const MANGA_PAGE_SIZE = 36;
-/** `GET /chapter` returns at most 100 chapters; a few passes cover a page of titles. */
-const READABLE_LIMIT = 100;
-const READABLE_PASSES = 4;
+export const MANGA_PAGE_SIZE = 24;
 /** MangaDex refuses `offset + limit` above 10 000. */
 const MAX_RESULTS = 10_000;
 /** Feed pages are capped at 500; a few requests cover even the longest series. */
@@ -97,55 +90,9 @@ export class MangaDexCatalog implements MangaCatalog {
     if (offset + MANGA_PAGE_SIZE > MAX_RESULTS) return { items: [], page, hasNextPage: false };
     const raw = await this.client.get('/manga', { ...LIST_FILTERS, ...params, limit: MANGA_PAGE_SIZE, offset }, ttl);
     const data = this.parse(RawCollection, raw);
-    const all = this.parseItems(RawManga, data.data).map(toMangaSummary);
+    const items = this.parseItems(RawManga, data.data).map(toMangaSummary);
     const end = data.offset + data.limit;
-    const readable = await this.readableIds(all.map((item) => item.id), ttl).catch(() => null);
-    // On a failed check, show everything rather than nothing.
-    const items = readable ? all.filter((item) => readable.has(item.id)) : all;
     return { items, page, hasNextPage: end < Math.min(data.total, MAX_RESULTS) };
-  }
-
-  /**
-   * Which of these titles have at least one chapter with pages on MangaDex in English or Filipino.
-   * Licensed series often keep only links to the publisher (MANGA Plus, Webnovel, …), which MangaDex still counts
-   * as "available chapters". Asks `GET /chapter` for readable chapters of all of them at once; titles found are
-   * readable, and the rest are asked again until none are left or nothing more comes back. Titles not settled
-   * after a few passes are kept.
-   */
-  private async readableIds(ids: readonly string[], ttl: number): Promise<Set<string>> {
-    const readable = new Set<string>();
-    let remaining = [...ids];
-    for (let pass = 0; pass < READABLE_PASSES && remaining.length > 0; pass += 1) {
-      const raw = await this.client.get(
-        '/chapter',
-        {
-          'manga[]': remaining,
-          'translatedLanguage[]': MANGA_LANGUAGES,
-          includeExternalUrl: '0',
-          includeEmptyPages: '0',
-          includeFutureUpdates: '0',
-          'contentRating[]': CONTENT_RATINGS,
-          limit: READABLE_LIMIT,
-        },
-        ttl,
-      );
-      const data = this.parse(RawCollection, raw);
-      const found = new Set(
-        this.parseItems(RawChapter, data.data)
-          .map(chapterMangaId)
-          .filter((id): id is string => id !== null),
-      );
-      for (const id of found) readable.add(id);
-      remaining = remaining.filter((id) => !found.has(id));
-      // Every readable chapter of the remaining titles came back, or none of them has any.
-      if (data.total <= data.data.length || found.size === 0) {
-        if (found.size === 0 && data.total > 0) break;
-        return readable;
-      }
-    }
-    // Unsettled titles stay listed.
-    for (const id of remaining) readable.add(id);
-    return readable;
   }
 
   list(list: MangaList, page: number): Promise<Page<MangaSummary>> {

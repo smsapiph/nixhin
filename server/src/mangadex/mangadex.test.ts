@@ -132,38 +132,8 @@ describe('MangaDexCatalog', () => {
     const { fetch, recorded } = fakeMangaDex(() => collection([rawManga()], 24, 24, 30));
     const page = await buildCatalog(fetch).search('one piece & co', 2);
     expect(recorded.urls[0]?.searchParams.get('title')).toBe('one piece & co');
-    expect(recorded.urls[0]?.searchParams.get('offset')).toBe('36');
+    expect(recorded.urls[0]?.searchParams.get('offset')).toBe('24');
     expect(page.hasNextPage).toBe(false);
-  });
-
-  it('drops titles whose chapters are all on an official site', async () => {
-    const OFFICIAL = 'b2d8f1a3-1111-4c2d-9e3f-000000000002';
-    const QUIET = 'b2d8f1a3-1111-4c2d-9e3f-000000000003';
-    const { fetch, recorded } = fakeMangaDex((url) => {
-      if (url.pathname === '/manga') {
-        return collection([rawManga(), { ...rawManga(), id: OFFICIAL }, { ...rawManga(), id: QUIET }], 0, 36, 3);
-      }
-      if (url.pathname === '/chapter') {
-        const asked = url.searchParams.getAll('manga[]');
-        // Pass 1: 100 of 150 readable chapters come back, all of MANGA_ID. Pass 2: nothing for the other two.
-        if (asked.includes(MANGA_ID)) return collection(Array.from({ length: 100 }, () => rawChapter(CHAPTER_ID, '1')), 0, 100, 150);
-        return collection([], 0, 100, 0);
-      }
-      return undefined;
-    });
-    const page = await buildCatalog(fetch).list('popular', 1);
-    expect(page.items.map((item) => item.id)).toEqual([MANGA_ID]);
-    const checks = recorded.urls.filter((url) => url.pathname === '/chapter');
-    expect(checks[0]?.searchParams.get('includeExternalUrl')).toBe('0');
-    expect(checks[0]?.searchParams.get('includeEmptyPages')).toBe('0');
-    expect(checks[0]?.searchParams.getAll('manga[]')).toEqual([MANGA_ID, OFFICIAL, QUIET]);
-    expect(checks[1]?.searchParams.getAll('manga[]')).toEqual([OFFICIAL, QUIET]);
-  });
-
-  it('keeps every title when the readability check fails', async () => {
-    const { fetch } = fakeMangaDex((url) => (url.pathname === '/manga' ? collection([rawManga()], 0, 36, 1) : undefined));
-    const page = await buildCatalog(fetch).list('popular', 1);
-    expect(page.items).toHaveLength(1);
   });
 
   it('maps details: English title, cleaned description, credits and https-only official links', async () => {

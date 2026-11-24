@@ -9,7 +9,7 @@ import { Poster } from '../components/Poster';
 import { Eyebrow, PillButton } from '../components/ui';
 import { useDocumentTitle } from '../hooks/useDocumentTitle';
 import { useStore } from '../hooks/useStore';
-import { LANGUAGE_LABELS, chapterLabel, chapterNumber, filterChapters, firstChapter, preferReadable } from '../lib/mangaChapters';
+import { LANGUAGE_LABELS, chapterLabel, chapterNumber, filterChapters, firstChapter } from '../lib/mangaChapters';
 import { findReading, mangaProgressStore } from '../lib/mangaProgress';
 import { isPlainClick, mangaReaderPath } from '../routes';
 import animeStyles from './AnimePage.module.css';
@@ -151,8 +151,7 @@ function Chapters({ manga, language, onLanguage }: ChaptersProps) {
   const [shown, setShown] = useState(CHAPTER_STEP);
   const filterId = useId();
 
-  // Official-site links only where no upload can be read here.
-  const all = preferReadable(chapters.data ?? []);
+  const all = chapters.data ?? [];
   const reading = findReading(progress, manga.id);
   const resume = reading?.language === language ? all.find((chapter) => chapter.id === reading.chapterId) : undefined;
   const start = firstChapter(all);

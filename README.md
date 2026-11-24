@@ -244,9 +244,7 @@ uses the TMDB API but is not endorsed or certified by TMDB.
 The Manga mode (`/manga`) reads from the public [MangaDex API](https://api.mangadex.org/docs/). No key or account
 is needed, so it is on by default (`MANGA_ENABLED=false` hides it).
 
-- Only titles rated `safe` or `suggestive` with English or Filipino chapters are listed, and only those with at least
-  one chapter that has pages on MangaDex: series whose chapters are all links to an official site (licensed titles)
-  are left out of lists and search (one or two `GET /chapter` checks per page, cached).
+- Only titles rated `safe` or `suggestive` with English or Filipino chapters are listed.
 - The server sends its own User-Agent (MangaDex blocks browser-like ones) and stays under MangaDex's rate limit
   (about 5 requests/second per IP), caching every response.
 - Covers and pages load through this site at `/img/md/*`: a Netlify Function (`server/netlify/functions/img.ts`) that
