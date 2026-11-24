@@ -251,6 +251,8 @@ is needed, so it is on by default (`MANGA_ENABLED=false` hides it).
   fetches them from `uploads.mangadex.org` with the server's own User-Agent (MangaDex refuses browser User-Agents
   arriving through a proxy), and Netlify's CDN caches each image. In development a Vite proxy does the same. If that
   fails, the reader tries the MangaDex@Home node, then `uploads.mangadex.org` directly (both allowed in the CSP).
+- Share links to a manga or a chapter get their own preview (title, description and a 1200×630 card with the cover;
+  `/og/manga/:id.jpg?ch=`), like anime, movie and TV links.
 - Each chapter credits its scanlation group and MangaDex. Chapters published on an official site (e.g. MANGA Plus)
   link there instead.
 - Reading progress ("Continue reading") stays in the browser (`nixhin-manga-progress-v1`).

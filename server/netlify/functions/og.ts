@@ -1,11 +1,11 @@
-import { buildCatalog, buildMediaCatalog } from '../../src/bootstrap.js';
+import { buildCatalog, buildMangaCatalog, buildMediaCatalog } from '../../src/bootstrap.js';
 import { loadConfig } from '../../src/config.js';
 import { createLogger } from '../../src/logger.js';
-import { CARD_FONT_FILES, cardContent, mediaCardContent, renderCard, type CardContent, type CardFonts } from '../../src/seo/ogCard.js';
-import { parseCardLink, parseMediaCardLink } from '../../src/seo/pageMeta.js';
+import { CARD_FONT_FILES, cardContent, mangaCardContent, mediaCardContent, renderCard, type CardContent, type CardFonts } from '../../src/seo/ogCard.js';
+import { parseCardLink, parseMangaCardLink, parseMediaCardLink } from '../../src/seo/pageMeta.js';
 
 /**
- * Branded share card: GET /og/anime/:id.jpg?ep=&lang=, /og/movie/:id.jpg or /og/tv/:id.jpg?s=&ep=
+ * Branded share card: GET /og/anime/:id.jpg?ep=&lang=, /og/movie/:id.jpg, /og/tv/:id.jpg?s=&ep= or /og/manga/:id.jpg?ch=
  *  →  1200×630 JPEG.
  * Only crawlers request it (it is referenced from og:image), and Netlify's CDN keeps the result,
  * so each card is normally rendered once.
@@ -15,6 +15,7 @@ const appConfig = loadConfig({ ...process.env, NODE_ENV: 'production' });
 const logger = createLogger('info');
 const catalog = buildCatalog(appConfig, logger);
 const media = buildMediaCatalog(appConfig, logger);
+const manga = buildMangaCatalog(appConfig, logger);
 
 const LOOKUP_TIMEOUT_MS = 4_000;
 const IMAGE_TIMEOUT_MS = 4_000;
@@ -40,11 +41,14 @@ function loadFonts(origin: string): Promise<CardFonts> {
   return fonts;
 }
 
-/** Downloads an AniList or TMDB image (hosts already validated by the catalogs) as a data URI; null on any problem. */
+/**
+ * Downloads an AniList, TMDB or MangaDex image (hosts already validated by the catalogs) as a data URI; null on any
+ * problem. The server's own User-Agent: MangaDex refuses browser-like ones.
+ */
 async function imageData(url: string | null): Promise<string | null> {
   if (!url) return null;
   try {
-    const response = await fetch(url, { signal: AbortSignal.timeout(IMAGE_TIMEOUT_MS) });
+    const response = await fetch(url, { headers: { 'User-Agent': 'nixhin-server/0.1' }, signal: AbortSignal.timeout(IMAGE_TIMEOUT_MS) });
     const type = response.headers.get('content-type')?.split(';')[0]?.trim() ?? '';
     if (!response.ok || !IMAGE_TYPES.has(type)) return null;
     const bytes = Buffer.from(await response.arrayBuffer());
@@ -91,6 +95,12 @@ async function cardSource(url: URL): Promise<CardSource | null> {
     );
     return { content: mediaCardContent(detail, mediaLink), banner: detail.backdropUrl, poster: detail.imageUrlLarge ?? detail.imageUrl };
   }
+  const mangaLink = parseMangaCardLink(url);
+  if (mangaLink && manga) {
+    const detail = await withTimeout(manga.manga(mangaLink.id), LOOKUP_TIMEOUT_MS);
+    // No wide art on MangaDex: the cover is both the poster and the blurred background.
+    return { content: mangaCardContent(detail, mangaLink.chapter), banner: null, poster: detail.coverUrl };
+  }
   return null;
 }
 
@@ -116,4 +126,4 @@ export default async (request: Request) => {
   }
 };
 
-export const config = { path: ['/og/anime/*', '/og/movie/*', '/og/tv/*'] };
+export const config = { path: ['/og/anime/*', '/og/movie/*', '/og/tv/*', '/og/manga/*'] };

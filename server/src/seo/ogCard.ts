@@ -1,7 +1,7 @@
 import { Resvg } from '@resvg/resvg-js';
 import jpeg from 'jpeg-js';
 import satori from 'satori';
-import type { AnimeDetail, MediaDetail } from '../../../shared/api.js';
+import type { AnimeDetail, MangaDetail, MediaDetail } from '../../../shared/api.js';
 import type { AnimeLink, MediaLink } from './pageMeta.js';
 
 /**
@@ -60,6 +60,8 @@ export interface CardContent {
   readonly badge: string;
   readonly language: string | null;
   readonly details: readonly string[];
+  /** Footer call to action; "Watch free" when omitted (manga cards say "Read free"). */
+  readonly action?: string;
 }
 
 /** A satori element: plain objects shaped like React elements, so no JSX/React is needed. */
@@ -107,6 +109,32 @@ function runtimeLabel(minutes: number | null): string | null {
   if (minutes === null) return null;
   const hours = Math.floor(minutes / 60);
   return hours > 0 ? `${hours}h ${minutes % 60}m` : `${minutes}m`;
+}
+
+const MANGA_STATUS: Readonly<Record<string, string>> = {
+  ongoing: 'Ongoing',
+  completed: 'Completed',
+  hiatus: 'On hiatus',
+  cancelled: 'Cancelled',
+};
+
+/** The card for a manga link; `chapter` (a validated number) adds a chapter badge. */
+export function mangaCardContent(manga: MangaDetail, chapter: string | null): CardContent {
+  const native = manga.altTitles.find((title) => /[\u3040-\u30ff\u3400-\u9fff]/.test(title)) ?? null;
+  const details = [
+    'Manga',
+    manga.year !== null ? String(manga.year) : null,
+    manga.status ? (MANGA_STATUS[manga.status] ?? null) : null,
+    manga.tags[0] ?? null,
+  ].filter((d): d is string => d !== null);
+  return {
+    title: manga.title,
+    native,
+    badge: chapter !== null ? `CHAPTER ${chapter}` : 'READ NOW',
+    language: null,
+    details,
+    action: 'Read free',
+  };
 }
 
 /** The card for a movie or TV link. A TV episode badge appears only for episodes that exist. */
@@ -190,7 +218,7 @@ export function cardTree(content: CardContent, images: CardImages): Node {
       el(
         { alignItems: 'center', fontSize: 22, color: 'rgba(246,244,239,0.8)' },
         el({ width: 36, height: 2, background: C.accentLight, marginRight: 16 }),
-        ...dotted(['Watch free', 'No account needed']),
+        ...dotted([content.action ?? 'Watch free', 'No account needed']),
       ),
     ),
     images.poster
