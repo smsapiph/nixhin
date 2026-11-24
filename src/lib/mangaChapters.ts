@@ -68,3 +68,12 @@ export function filterChapters(chapters: readonly MangaChapter[], typed: string)
 export function firstChapter(chapters: readonly MangaChapter[]): MangaChapter | null {
   return chapters.find((chapter) => !chapter.externalUrl) ?? chapters[0] ?? null;
 }
+
+/**
+ * Drops official-site links for chapter numbers that also have an upload readable here, so the list shows what can
+ * be read on this site. Chapters only on an official site stay (marked in the list).
+ */
+export function preferReadable(chapters: readonly MangaChapter[]): readonly MangaChapter[] {
+  const readable = new Set(chapters.filter((chapter) => !chapter.externalUrl).map(key));
+  return chapters.filter((chapter) => !chapter.externalUrl || !readable.has(key(chapter)));
+}

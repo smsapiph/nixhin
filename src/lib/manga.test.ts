@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { MangaChapter } from '../../shared/api';
 import { modeForPath, mangaPath, mangaReaderPath, searchPath } from '../routes';
 import { imageCandidates, imageSrc } from './images';
-import { chapterLabel, chapterNumber, filterChapters, firstChapter, neighbours } from './mangaChapters';
+import { chapterLabel, chapterNumber, filterChapters, firstChapter, neighbours, preferReadable } from './mangaChapters';
 import { parseMangaProgress, recordReading } from './mangaProgress';
 
 const id = (n: number) => `00000000-0000-4000-8000-${String(n).padStart(12, '0')}`;
@@ -34,6 +34,12 @@ describe('manga chapters', () => {
     const mixed = [chapter(1, '1'), chapter(2, '2', 'X', { externalUrl: 'https://x.example' }), chapter(3, '2', 'Y')];
     expect(neighbours(mixed, id(1)).next?.id).toBe(id(3));
     expect(firstChapter([mixed[1] as MangaChapter, mixed[2] as MangaChapter])?.id).toBe(id(3));
+  });
+
+  it('hides official-site links where an upload can be read here', () => {
+    const official = { externalUrl: 'https://official.example' };
+    const mixed = [chapter(1, '1', 'X', official), chapter(2, '1', 'Y'), chapter(3, '2', 'X', official)];
+    expect(preferReadable(mixed).map((c) => c.id)).toEqual([id(2), id(3)]);
   });
 
   it('labels and filters chapters', () => {
